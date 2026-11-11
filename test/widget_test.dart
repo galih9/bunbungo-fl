@@ -1,30 +1,42 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bunbungo/main.dart';
+import 'package:bunbungo/services/persistence_service.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('BunBunGo app smoke test', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final persistence = await PersistenceService.getInstance();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    await tester.pumpWidget(BunBunGoFlutterApp(persistence: persistence));
+    await tester.pumpAndSettle();
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    // Verify Brand title is rendered
+    expect(find.text('Bun Bun Go'), findsOneWidget);
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify Arena screen components
+    expect(find.text('SCRIPT SELECTION'), findsOneWidget);
+    expect(find.text('PRACTICE ROWS'), findsOneWidget);
+
+    // Verify bottom navigation tabs
+    expect(find.text('Arena'), findsOneWidget);
+    expect(find.text('Dashboard'), findsOneWidget);
+    expect(find.text('Chart'), findsOneWidget);
+    expect(find.text('Stats'), findsOneWidget);
+
+    // Tap on Dashboard tab
+    await tester.tap(find.text('Dashboard'));
+    await tester.pumpAndSettle();
+    expect(find.text('PERFORMANCE DASHBOARD'), findsOneWidget);
+
+    // Tap on Chart tab
+    await tester.tap(find.text('Chart'));
+    await tester.pumpAndSettle();
+    expect(find.text('SYLLABARY MATRIX'), findsOneWidget);
+
+    // Tap on Stats tab
+    await tester.tap(find.text('Stats'));
+    await tester.pumpAndSettle();
+    expect(find.text('Codex Analytics'), findsOneWidget);
   });
 }
