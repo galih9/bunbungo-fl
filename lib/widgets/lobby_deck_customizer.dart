@@ -19,7 +19,7 @@ class LobbyDeckCustomizer extends StatelessWidget {
     super.key,
     required this.settings,
     required this.progression,
-    required this.practiceFocusMode,
+    this.practiceFocusMode = PracticeFocusMode.standard,
     required this.onUpdateSettings,
     required this.onToggleRow,
     required this.onSelectPreset,

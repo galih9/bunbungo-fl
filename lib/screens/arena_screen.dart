@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_mobx/flutter_mobx.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/kana_data.dart';
+import '../logic/arena_store.dart';
 import '../logic/deck_generator.dart';
 import '../logic/mastery_analytics.dart';
 import '../logic/progression_engine.dart';
@@ -9,18 +12,15 @@ import '../models/character_mastery.dart';
 import '../models/game_settings.dart';
 import '../models/high_score.dart';
 import '../models/kana_item.dart';
-import '../models/user_progression.dart';
+import '../providers/app_providers.dart';
 import '../services/audio_service.dart';
 import '../services/persistence_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/lobby_deck_customizer.dart';
-import '../widgets/lobby_progression_banner.dart';
 import '../widgets/playing_stage.dart';
 import '../widgets/session_summary_view.dart';
 
-enum ArenaPhase { lobby, playing, summary }
-
-class ArenaScreen extends StatefulWidget {
+class ArenaScreen extends ConsumerStatefulWidget {
   final PersistenceService persistence;
   final VoidCallback onDataChanged;
   final ValueChanged<int> onNavigateTab;
@@ -33,33 +33,12 @@ class ArenaScreen extends StatefulWidget {
   });
 
   @override
-  State<ArenaScreen> createState() => ArenaScreenState();
+  ConsumerState<ArenaScreen> createState() => ArenaScreenState();
 }
 
-class ArenaScreenState extends State<ArenaScreen> {
-  ArenaPhase _phase = ArenaPhase.lobby;
-  late StoredGameSettings _settings;
-  late UserProgression _progression;
-  late Map<String, CharacterMastery> _masteryMap;
-
-  PracticeFocusMode _practiceFocusMode = PracticeFocusMode.standard;
-
-  // Active game session state
-  List<FlashcardChallenge> _deck = [];
-  int _currentIndex = 0;
-  int _score = 0;
-  int _streak = 0;
-  int _bestStreak = 0;
-  int _correctCount = 0;
-  int _attemptCount = 0;
-  DateTime? _cardStartTime;
-  DateTime? _sessionStartTime;
+class ArenaScreenState extends ConsumerState<ArenaScreen> {
+  late final ArenaStore _store;
   Timer? _countdownTimer;
-  int _remainingSeconds = 60;
-  FeedbackState? _feedback;
-  bool _showHint = false;
-  final List<KanaItem> _missedItems = [];
-  SessionProgressionResult? _lastSessionResult;
 
   // Typing inputs
   final TextEditingController _textController = TextEditingController();
@@ -68,7 +47,7 @@ class ArenaScreenState extends State<ArenaScreen> {
   @override
   void initState() {
     super.initState();
-    _loadState();
+    _store = ArenaStore();
   }
 
   @override
@@ -79,25 +58,29 @@ class ArenaScreenState extends State<ArenaScreen> {
     super.dispose();
   }
 
-  void _loadState() {
-    setState(() {
-      _settings = widget.persistence.loadGameSettings();
-      _progression = widget.persistence.loadUserProgression();
-      _masteryMap = widget.persistence.loadMasteryMap();
-    });
-  }
-
   void refreshData() {
-    _loadState();
+    // Data is reactively managed by Riverpod providers
+    ref.read(gameSettingsProvider.notifier).reload();
+    ref.read(userProgressionProvider.notifier).reload();
+    ref.read(characterMasteryProvider.notifier).reload();
   }
 
-  List<KanaItem> get _activePool {
-    if (_practiceFocusMode == PracticeFocusMode.weakLetters) {
-      final analysis = analyzeKanaPerformance(_masteryMap);
+  void startWeakLettersSession() {
+    _store.setPracticeFocusMode(PracticeFocusMode.weakLetters);
+    _store.setPhase(ArenaPhase.lobby);
+    startStandardSession();
+  }
+
+  List<KanaItem> _getActivePool(
+    StoredGameSettings settings,
+    Map<String, CharacterMastery> masteryMap,
+  ) {
+    if (_store.practiceFocusMode == PracticeFocusMode.weakLetters) {
+      final analysis = analyzeKanaPerformance(masteryMap);
       if (analysis.weakItems.isNotEmpty) return analysis.weakItems;
       if (analysis.learningItems.isNotEmpty) return analysis.learningItems;
     }
-    final selSet = Set<String>.from(_settings.selectedRows);
+    final selSet = Set<String>.from(settings.selectedRows);
     final pool = kanaItems.where((i) => selSet.contains(i.rowId)).toList();
     return pool.isNotEmpty
         ? pool
@@ -105,23 +88,20 @@ class ArenaScreenState extends State<ArenaScreen> {
   }
 
   void _updateSettings(StoredGameSettings newSettings) {
-    setState(() {
-      _settings = newSettings;
-    });
-    widget.persistence.saveGameSettings(newSettings);
+    ref.read(gameSettingsProvider.notifier).updateSettings(newSettings);
   }
 
-  void _toggleRow(String rowId) {
-    final list = List<String>.from(_settings.selectedRows);
+  void _toggleRow(StoredGameSettings settings, String rowId) {
+    final list = List<String>.from(settings.selectedRows);
     if (list.contains(rowId)) {
       if (list.length > 1) list.remove(rowId);
     } else {
       list.add(rowId);
     }
-    _updateSettings(_settings.copyWith(selectedRows: list));
+    _updateSettings(settings.copyWith(selectedRows: list));
   }
 
-  void _selectPreset(RowPreset preset) {
+  void _selectPreset(StoredGameSettings settings, RowPreset preset) {
     List<String> rows;
     switch (preset) {
       case RowPreset.starter:
@@ -149,54 +129,39 @@ class ArenaScreenState extends State<ArenaScreen> {
         rows = kanaRowGroups.map((g) => g.id).toList();
         break;
     }
-    _updateSettings(_settings.copyWith(selectedRows: rows));
+    _updateSettings(settings.copyWith(selectedRows: rows));
   }
 
   void _toggleUnlockAll() {
-    final updated = _progression.copyWith(unlockAllRows: !_progression.unlockAllRows);
-    setState(() {
-      _progression = updated;
-    });
-    widget.persistence.saveUserProgression(updated);
+    ref.read(userProgressionProvider.notifier).toggleUnlockAll();
     widget.onDataChanged();
   }
 
-  void startSessionWithDeck(List<FlashcardChallenge> deck) {
+  void startSessionWithDeck(
+    List<FlashcardChallenge> deck,
+    StoredGameSettings settings,
+  ) {
     if (deck.isEmpty) return;
     _countdownTimer?.cancel();
+    _textController.clear();
 
-    setState(() {
-      _phase = ArenaPhase.playing;
-      _deck = deck;
-      _currentIndex = 0;
-      _score = 0;
-      _streak = 0;
-      _bestStreak = 0;
-      _correctCount = 0;
-      _attemptCount = 0;
-      _missedItems.clear();
-      _feedback = null;
-      _showHint = false;
-      _cardStartTime = DateTime.now();
-      _sessionStartTime = DateTime.now();
-      _textController.clear();
-      _remainingSeconds = 60;
-    });
+    _store.startSession(deck);
 
-    if (_settings.gameMode == GameMode.timeAttack) {
+    if (settings.gameMode == GameMode.timeAttack) {
       _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        if (!mounted) return;
-        setState(() {
-          _remainingSeconds -= 1;
-        });
-        if (_remainingSeconds <= 0) {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
+        _store.decrementTimer();
+        if (_store.remainingSeconds <= 0) {
           timer.cancel();
           _endSession();
         }
       });
     }
 
-    if (_settings.inputMode == InputMode.typing) {
+    if (settings.inputMode == InputMode.typing) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _textFocusNode.requestFocus();
       });
@@ -204,56 +169,59 @@ class ArenaScreenState extends State<ArenaScreen> {
   }
 
   void startStandardSession() {
-    final count = _settings.gameMode == GameMode.sprint ? _settings.sprintDeckSize : 30;
+    final settings = ref.read(gameSettingsProvider);
+    final masteryMap = ref.read(characterMasteryProvider);
+    final count = settings.gameMode == GameMode.sprint ? settings.sprintDeckSize : 30;
+
     List<FlashcardChallenge> deck;
-    if (_practiceFocusMode == PracticeFocusMode.weakLetters) {
+    if (_store.practiceFocusMode == PracticeFocusMode.weakLetters) {
       deck = generateWeakLettersDeck(
-        _masteryMap,
-        _settings.scriptMode,
+        masteryMap,
+        settings.scriptMode,
         count,
-        _settings.selectedRows,
+        settings.selectedRows,
       );
     } else {
       deck = generateChallengeDeck(
-        _settings.selectedRows,
-        _settings.scriptMode,
+        settings.selectedRows,
+        settings.scriptMode,
         count,
-        _masteryMap,
+        masteryMap,
       );
     }
-    startSessionWithDeck(deck);
+    startSessionWithDeck(deck, settings);
   }
 
   void startCustomSession(List<KanaItem> items) {
+    final settings = ref.read(gameSettingsProvider);
+    final masteryMap = ref.read(characterMasteryProvider);
     final deck = generateCustomItemsDeck(
       items,
-      _settings.scriptMode,
+      settings.scriptMode,
       items.length * 2,
-      _masteryMap,
+      masteryMap,
     );
-    startSessionWithDeck(deck);
+    startSessionWithDeck(deck, settings);
   }
 
   void _submitAnswer(String submittedRomaji) {
-    if (_feedback != null || _currentIndex >= _deck.length) return;
+    if (_store.feedback != null || _store.currentIndex >= _store.deck.length) return;
 
-    final currentCard = _deck[_currentIndex];
+    final currentCard = _store.deck[_store.currentIndex];
     final cleanSubmitted = submittedRomaji.trim().toLowerCase();
     final isCorrect = currentCard.item.acceptedRomaji
         .any((acc) => acc.toLowerCase() == cleanSubmitted);
 
     final now = DateTime.now();
-    final responseTime = _cardStartTime != null
-        ? now.difference(_cardStartTime!).inMilliseconds
+    final responseTime = _store.cardStartTime != null
+        ? now.difference(_store.cardStartTime!).inMilliseconds
         : 1200;
 
-    _attemptCount += 1;
-    if (isCorrect) {
-      _correctCount += 1;
-      _streak += 1;
-      if (_streak > _bestStreak) _bestStreak = _streak;
+    final settings = ref.read(gameSettingsProvider);
 
-      final comboMultiplier = (1 + (_streak ~/ 5)).clamp(1, 4);
+    if (isCorrect) {
+      final currentStreak = _store.streak + 1;
+      final comboMultiplier = (1 + (currentStreak ~/ 5)).clamp(1, 4);
       SpeedTier speedTier = SpeedTier.steady;
       int speedBonus = 0;
       if (responseTime <= 1200) {
@@ -266,51 +234,34 @@ class ArenaScreenState extends State<ArenaScreen> {
 
       final redemptionBonus = currentCard.isRedemption ? 50 : 0;
       final points = 100 * comboMultiplier +
-          (_showHint ? 0 : 25) +
+          (_store.showHint ? 0 : 25) +
           speedBonus +
           redemptionBonus;
-      _score += points;
 
-      AudioService.playCorrect(_streak, _settings.soundEnabled);
+      AudioService.playCorrect(currentStreak, settings.soundEnabled);
 
-      _feedback = FeedbackState(
-        status: FeedbackStatus.correct,
-        pointsEarned: points,
+      _store.recordCorrect(
+        points: points,
         chosenRomaji: cleanSubmitted,
         expectedRomaji: currentCard.item.romaji,
-        isRedemptionCleared: currentCard.isRedemption,
-        responseTimeMilliseconds: responseTime,
+        isRedemption: currentCard.isRedemption,
+        responseTime: responseTime,
         speedTier: speedTier,
       );
     } else {
-      _streak = 0;
-      AudioService.playWrong(_settings.soundEnabled);
+      AudioService.playWrong(settings.soundEnabled);
 
-      if (!_missedItems.any((i) => i.id == currentCard.item.id)) {
-        _missedItems.add(currentCard.item);
-      }
-
-      // Schedule spaced redemption
-      _deck = scheduleSpacedRetryInDeck(
-        _deck,
-        _currentIndex,
-        currentCard.item,
-        _settings.scriptMode,
-      );
-
-      _feedback = FeedbackState(
-        status: FeedbackStatus.wrong,
-        pointsEarned: 0,
+      _store.recordWrong(
+        item: currentCard.item,
         chosenRomaji: cleanSubmitted,
         expectedRomaji: currentCard.item.romaji,
-        isRedemptionCleared: false,
-        responseTimeMilliseconds: responseTime,
+        responseTime: responseTime,
+        scriptMode: settings.scriptMode,
       );
     }
 
-    // Update character mastery
-    _masteryMap = updateCharacterMastery(
-      _masteryMap,
+    // Persist mastery update through Riverpod notifier to Isar
+    ref.read(characterMasteryProvider.notifier).recordAttempt(
       CharacterAttemptPayload(
         kanaId: currentCard.item.id,
         script: currentCard.script,
@@ -319,9 +270,6 @@ class ArenaScreenState extends State<ArenaScreen> {
         responseTimeMilliseconds: responseTime,
       ),
     );
-    widget.persistence.saveMasteryMap(_masteryMap);
-
-    setState(() {});
 
     final delay = isCorrect ? 450 : 1200;
     Timer(Duration(milliseconds: delay), () {
@@ -331,78 +279,72 @@ class ArenaScreenState extends State<ArenaScreen> {
   }
 
   void _advanceCard() {
-    if (_currentIndex + 1 >= _deck.length) {
-      if (_settings.gameMode == GameMode.zen ||
-          _settings.gameMode == GameMode.timeAttack) {
-        // In zen or time-attack, append more cards infinitely
-        _deck = appendDistinctFlashcardToDeck(
-          _deck,
-          _activePool,
-          _settings.scriptMode,
-          _masteryMap,
-        );
-        _currentIndex += 1;
-      } else {
-        _endSession();
-        return;
-      }
-    } else {
-      _currentIndex += 1;
+    final settings = ref.read(gameSettingsProvider);
+    final masteryMap = ref.read(characterMasteryProvider);
+    final isInfinite = settings.gameMode == GameMode.zen ||
+        settings.gameMode == GameMode.timeAttack;
+    final activePool = _getActivePool(settings, masteryMap);
+
+    final hasMore = _store.advanceCard(
+      isInfiniteMode: isInfinite,
+      activePool: activePool,
+      scriptMode: settings.scriptMode,
+      masteryMap: masteryMap,
+    );
+
+    if (!hasMore) {
+      _endSession();
+      return;
     }
 
-    setState(() {
-      _feedback = null;
-      _showHint = false;
-      _cardStartTime = DateTime.now();
-      _textController.clear();
-    });
-
-    if (_settings.inputMode == InputMode.typing) {
+    _textController.clear();
+    if (settings.inputMode == InputMode.typing) {
       _textFocusNode.requestFocus();
     }
   }
 
   void _endSession() {
     _countdownTimer?.cancel();
-    final duration = _sessionStartTime != null
-        ? DateTime.now().difference(_sessionStartTime!).inSeconds
+    final settings = ref.read(gameSettingsProvider);
+    final currentProgression = ref.read(userProgressionProvider);
+    final masteryMap = ref.read(characterMasteryProvider);
+
+    final duration = _store.sessionStartTime != null
+        ? DateTime.now().difference(_store.sessionStartTime!).inSeconds
         : 30;
 
     final result = evaluateSessionProgression(
-      sessionScore: _score,
-      sessionCorrect: _correctCount,
-      sessionAttempts: _attemptCount,
-      sessionBestStreak: _bestStreak,
+      sessionScore: _store.score,
+      sessionCorrect: _store.correctCount,
+      sessionAttempts: _store.attemptCount,
+      sessionBestStreak: _store.bestStreak,
       durationSeconds: duration,
-      masteryMap: _masteryMap,
-      currentProgression: _progression,
+      masteryMap: masteryMap,
+      currentProgression: currentProgression,
     );
 
-    _progression = result.updatedProgression;
-    widget.persistence.saveUserProgression(_progression);
+    // Persist updated progression to Isar
+    ref.read(userProgressionProvider.notifier).applySessionResult(result);
 
-    if (_attemptCount > 0) {
-      final accuracy = ((_correctCount / _attemptCount) * 100).round();
+    if (_store.attemptCount > 0) {
+      final accuracy = _store.accuracy;
       final highScore = HighScoreRecord(
         id: 'hs-${DateTime.now().millisecondsSinceEpoch}',
-        gameMode: _settings.gameMode,
-        scriptMode: _settings.scriptMode,
-        score: _score,
+        gameMode: settings.gameMode,
+        scriptMode: settings.scriptMode,
+        score: _store.score,
         accuracy: accuracy,
-        cardsCleared: _attemptCount,
+        cardsCleared: _store.attemptCount,
         durationSeconds: duration,
         dateIso: DateTime.now().toIso8601String(),
       );
-      widget.persistence.saveHighScore(highScore);
+      // Persist high score to Isar
+      ref.read(highScoresProvider.notifier).addHighScore(highScore);
     }
 
-    AudioService.playVictory(_settings.soundEnabled);
+    AudioService.playVictory(settings.soundEnabled);
 
-    setState(() {
-      _phase = ArenaPhase.summary;
-      _lastSessionResult = result;
-    });
-
+    _store.finishSession(result);
     widget.onDataChanged();
   }
 
@@ -419,8 +361,8 @@ class ArenaScreenState extends State<ArenaScreen> {
   }
 
   void _checkTypingAutoSubmit(String currentText) {
-    if (_currentIndex >= _deck.length) return;
-    final item = _deck[_currentIndex].item;
+    if (_store.currentIndex >= _store.deck.length) return;
+    final item = _store.deck[_store.currentIndex].item;
     final cleaned = currentText.trim().toLowerCase();
 
     if (item.acceptedRomaji.any((a) => a.toLowerCase() == cleaned)) {
@@ -439,146 +381,115 @@ class ArenaScreenState extends State<ArenaScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final analysis = analyzeKanaPerformance(_masteryMap);
+    final settings = ref.watch(gameSettingsProvider);
+    final progression = ref.watch(userProgressionProvider);
+    final masteryMap = ref.watch(characterMasteryProvider);
+    final activePool = _getActivePool(settings, masteryMap);
+    final analysis = analyzeKanaPerformance(masteryMap);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: () {
-        switch (_phase) {
-          case ArenaPhase.lobby:
-            return SingleChildScrollView(
-              padding: const EdgeInsets.only(top: 16, bottom: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  LobbyProgressionBanner(
-                    progression: _progression,
-                    analysis: analysis,
-                    practiceFocusMode: _practiceFocusMode,
-                    onToggleFocusMode: () {
-                      setState(() {
-                        _practiceFocusMode =
-                            _practiceFocusMode == PracticeFocusMode.standard
-                                ? PracticeFocusMode.weakLetters
-                                : PracticeFocusMode.standard;
-                      });
-                    },
-                    onStartWeakLetters: () {
-                      setState(() {
-                        _practiceFocusMode = PracticeFocusMode.weakLetters;
-                      });
-                      startStandardSession();
-                    },
-                    onOpenAchievements: () => widget.onNavigateTab(3),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  LobbyDeckCustomizer(
-                    settings: _settings,
-                    progression: _progression,
-                    practiceFocusMode: _practiceFocusMode,
-                    onUpdateSettings: _updateSettings,
-                    onToggleRow: _toggleRow,
-                    onSelectPreset: _selectPreset,
-                    onToggleUnlockAll: _toggleUnlockAll,
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  ElevatedButton(
-                    onPressed: startStandardSession,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.text,
-                      foregroundColor: AppColors.background,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      elevation: 0,
+      child: Observer(
+        builder: (_) {
+          switch (_store.phase) {
+            case ArenaPhase.lobby:
+              return SingleChildScrollView(
+                padding: const EdgeInsets.only(top: 12, bottom: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    LobbyDeckCustomizer(
+                      settings: settings,
+                      progression: progression,
+                      onUpdateSettings: _updateSettings,
+                      onToggleRow: (rowId) => _toggleRow(settings, rowId),
+                      onSelectPreset: (preset) => _selectPreset(settings, preset),
+                      onToggleUnlockAll: _toggleUnlockAll,
                     ),
-                    child: Text(
-                      _practiceFocusMode == PracticeFocusMode.weakLetters
-                          ? 'Start Weak Letters Drill (${analysis.weakItems.length} Kana)'
-                          : 'Start Bun Bun Go Session (${_activePool.length} Kana)',
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () {
+                        _store.setPracticeFocusMode(PracticeFocusMode.standard);
+                        startStandardSession();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.text,
+                        foregroundColor: AppColors.background,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        'Start Bun Bun Go Session (${activePool.length} Kana)',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            );
+                  ],
+                ),
+              );
 
-          case ArenaPhase.playing:
-            if (_currentIndex >= _deck.length) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: PlayingStage(
-                currentCard: _deck[_currentIndex],
-                currentIndex: _currentIndex,
-                deckLength: _deck.length,
-                score: _score,
-                streak: _streak,
-                remainingSeconds: _remainingSeconds,
-                settings: _settings,
-                feedback: _feedback,
-                showHint: _showHint,
-                typedValue: _textController.text,
-                textController: _textController,
-                textFocusNode: _textFocusNode,
-                onSubmitAnswer: _submitAnswer,
-                onToggleHint: () {
-                  setState(() {
-                    _showHint = !_showHint;
-                  });
-                },
-                onEndRun: _endSession,
-                onVirtualKeyPress: _onVirtualKeyPress,
-                onVirtualBackspace: _onVirtualBackspace,
-              ),
-            );
+            case ArenaPhase.playing:
+              if (_store.currentIndex >= _store.deck.length) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final currentCard = _store.deck[_store.currentIndex];
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: PlayingStage(
+                  currentCard: currentCard,
+                  currentIndex: _store.currentIndex,
+                  deckLength: _store.deck.length,
+                  score: _store.score,
+                  streak: _store.streak,
+                  remainingSeconds: _store.remainingSeconds,
+                  settings: settings,
+                  feedback: _store.feedback,
+                  showHint: _store.showHint,
+                  typedValue: _textController.text,
+                  textController: _textController,
+                  textFocusNode: _textFocusNode,
+                  onSubmitAnswer: _submitAnswer,
+                  onToggleHint: _store.toggleHint,
+                  onEndRun: _endSession,
+                  onVirtualKeyPress: _onVirtualKeyPress,
+                  onVirtualBackspace: _onVirtualBackspace,
+                ),
+              );
 
-          case ArenaPhase.summary:
-            final duration = _sessionStartTime != null
-                ? DateTime.now().difference(_sessionStartTime!).inSeconds
-                : 30;
-            final accuracy = _attemptCount > 0
-                ? ((_correctCount / _attemptCount) * 100).round()
-                : 0;
+            case ArenaPhase.summary:
+              final duration = _store.sessionStartTime != null
+                  ? DateTime.now().difference(_store.sessionStartTime!).inSeconds
+                  : 30;
 
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: SessionSummaryView(
-                score: _score,
-                accuracy: accuracy,
-                bestStreak: _bestStreak,
-                durationSeconds: duration,
-                result: _lastSessionResult,
-                missedItems: _missedItems,
-                weakCount: analysis.weakItems.length,
-                onPlayAgain: startStandardSession,
-                onPracticeMissedItems: (items) {
-                  startCustomSession(items);
-                },
-                onPracticeWeakLetters: () {
-                  setState(() {
-                    _practiceFocusMode = PracticeFocusMode.weakLetters;
-                  });
-                  startStandardSession();
-                },
-                onCustomizeDeck: () {
-                  setState(() {
-                    _phase = ArenaPhase.lobby;
-                  });
-                },
-              ),
-            );
-        }
-      }(),
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: SessionSummaryView(
+                  score: _store.score,
+                  accuracy: _store.accuracy,
+                  bestStreak: _store.bestStreak,
+                  durationSeconds: duration,
+                  result: _store.lastSessionResult,
+                  missedItems: _store.missedItems.toList(),
+                  weakCount: analysis.weakItems.length,
+                  onPlayAgain: startStandardSession,
+                  onPracticeMissedItems: (items) {
+                    startCustomSession(items);
+                  },
+                  onPracticeWeakLetters: () {
+                    _store.setPracticeFocusMode(PracticeFocusMode.weakLetters);
+                    startStandardSession();
+                  },
+                  onCustomizeDeck: _store.resetToLobby,
+                ),
+              );
+          }
+        },
+      ),
     );
   }
 }

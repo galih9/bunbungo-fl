@@ -1,13 +1,15 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../models/game_settings.dart';
+import '../providers/app_providers.dart';
 import '../services/audio_service.dart';
 import '../services/persistence_service.dart';
 import '../theme/app_theme.dart';
 import 'about_screen.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   final PersistenceService persistence;
   final VoidCallback onDataChanged;
   final ValueChanged<int>? onNavigateTab;
@@ -20,10 +22,10 @@ class SettingsScreen extends StatefulWidget {
   });
 
   @override
-  State<SettingsScreen> createState() => SettingsScreenState();
+  ConsumerState<SettingsScreen> createState() => SettingsScreenState();
 }
 
-class SettingsScreenState extends State<SettingsScreen> {
+class SettingsScreenState extends ConsumerState<SettingsScreen> {
   late StoredGameSettings _savedSettings;
   late StoredGameSettings _draftSettings;
   bool _isSaving = false;
@@ -66,6 +68,9 @@ class SettingsScreenState extends State<SettingsScreen> {
   }
 
   void refreshData() {
+    try {
+      ref.read(gameSettingsProvider.notifier).reload();
+    } catch (_) {}
     _loadState();
   }
 
@@ -103,7 +108,10 @@ class SettingsScreenState extends State<SettingsScreen> {
     // Smooth delay so the overlay loading is cleanly visible and avoids UI stutter
     await Future.delayed(const Duration(milliseconds: 450));
 
-    // Persist to offline storage
+    // Persist to offline storage & Riverpod
+    try {
+      ref.read(gameSettingsProvider.notifier).updateSettings(_draftSettings);
+    } catch (_) {}
     await widget.persistence.saveGameSettings(_draftSettings);
 
     // Apply the active theme

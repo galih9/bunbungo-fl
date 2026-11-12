@@ -3,6 +3,9 @@
 *.log
 *.pyc
 *.swp
+*.dylib
+*.so
+*.dll
 .DS_Store
 .atom/
 .build/

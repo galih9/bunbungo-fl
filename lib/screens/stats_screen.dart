@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/kana_data.dart';
 import '../logic/mastery_analytics.dart';
 import '../logic/progression_engine.dart';
@@ -6,13 +7,14 @@ import '../models/achievement.dart';
 import '../models/character_mastery.dart';
 import '../models/high_score.dart';
 import '../models/user_progression.dart';
+import '../providers/app_providers.dart';
 import '../services/persistence_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/character_detail_sheet.dart';
 
 enum StatsSubTab { analytics, achievements, leaderboard }
 
-class StatsScreen extends StatefulWidget {
+class StatsScreen extends ConsumerStatefulWidget {
   final PersistenceService persistence;
   final VoidCallback onDataChanged;
   final ValueChanged<int> onNavigateTab;
@@ -25,10 +27,10 @@ class StatsScreen extends StatefulWidget {
   });
 
   @override
-  State<StatsScreen> createState() => StatsScreenState();
+  ConsumerState<StatsScreen> createState() => StatsScreenState();
 }
 
-class StatsScreenState extends State<StatsScreen> {
+class StatsScreenState extends ConsumerState<StatsScreen> {
   StatsSubTab _subTab = StatsSubTab.analytics;
   late UserProgression _progression;
   late Map<String, CharacterMastery> _masteryMap;
@@ -37,23 +39,22 @@ class StatsScreenState extends State<StatsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadState();
-  }
-
-  void _loadState() {
-    setState(() {
-      _progression = widget.persistence.loadUserProgression();
-      _masteryMap = widget.persistence.loadMasteryMap();
-      _highScores = widget.persistence.loadHighScores();
-    });
+    _progression = widget.persistence.loadUserProgression();
+    _masteryMap = widget.persistence.loadMasteryMap();
+    _highScores = widget.persistence.loadHighScores();
   }
 
   void refreshData() {
-    _loadState();
+    ref.read(userProgressionProvider.notifier).reload();
+    ref.read(characterMasteryProvider.notifier).reload();
+    ref.read(highScoresProvider.notifier).reload();
   }
 
   @override
   Widget build(BuildContext context) {
+    _progression = ref.watch(userProgressionProvider);
+    _masteryMap = ref.watch(characterMasteryProvider);
+    _highScores = ref.watch(highScoresProvider);
     final achievements = getAchievementProgressList(_progression, _masteryMap);
     final unlockedBadges = achievements.where((a) => a.isUnlocked).length;
 

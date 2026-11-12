@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'data/achievements_data.dart';
 import 'data/kana_data.dart';
-import 'logic/mastery_analytics.dart';
-import 'logic/progression_engine.dart';
-import 'models/character_mastery.dart';
 import 'models/game_settings.dart';
-import 'models/user_progression.dart';
+import 'providers/app_providers.dart';
 import 'screens/arena_screen.dart';
 import 'screens/chart_screen.dart';
 import 'screens/dashboard_screen.dart';
@@ -32,67 +30,69 @@ void main() async {
     ),
   );
 
-  runApp(BunBunGoFlutterApp(persistence: persistence));
+  runApp(
+    ProviderScope(
+      overrides: [
+        persistenceProvider.overrideWithValue(persistence),
+      ],
+      child: BunBunGoFlutterApp(persistence: persistence),
+    ),
+  );
 }
 
-class BunBunGoFlutterApp extends StatefulWidget {
+class BunBunGoFlutterApp extends StatelessWidget {
   final PersistenceService persistence;
 
   const BunBunGoFlutterApp({super.key, required this.persistence});
 
   @override
-  State<BunBunGoFlutterApp> createState() => _BunBunGoFlutterAppState();
+  Widget build(BuildContext context) {
+    return ProviderScope(
+      overrides: [
+        persistenceProvider.overrideWithValue(persistence),
+      ],
+      child: _BunBunGoAppRoot(persistence: persistence),
+    );
+  }
 }
 
-class _BunBunGoFlutterAppState extends State<BunBunGoFlutterApp> {
-  late StoredGameSettings _settings;
+class _BunBunGoAppRoot extends ConsumerWidget {
+  final PersistenceService persistence;
+
+  const _BunBunGoAppRoot({required this.persistence});
 
   @override
-  void initState() {
-    super.initState();
-    _settings = widget.persistence.loadGameSettings();
-    AppColors.applyTheme(_settings.themeMode);
-  }
-
-  void _handleSettingsChanged() {
-    setState(() {
-      _settings = widget.persistence.loadGameSettings();
-      AppColors.applyTheme(_settings.themeMode);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(gameSettingsProvider);
     final isPlatformDark =
         MediaQuery.maybePlatformBrightnessOf(context) == Brightness.dark;
-    AppColors.applyTheme(_settings.themeMode, isPlatformDark: isPlatformDark);
-    final isOled = _settings.themeMode == AppThemeMode.oled;
+    AppColors.applyTheme(settings.themeMode, isPlatformDark: isPlatformDark);
+    final isOled = settings.themeMode == AppThemeMode.oled;
 
     return MaterialApp(
       title: 'Bun Bun Go',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.getTheme(
         AppThemeMode.light,
-        accent: _settings.accentColor,
+        accent: settings.accentColor,
         isPlatformDark: false,
       ),
       darkTheme: AppTheme.getTheme(
         isOled ? AppThemeMode.oled : AppThemeMode.dark,
-        accent: _settings.accentColor,
+        accent: settings.accentColor,
         isPlatformDark: true,
       ),
-      themeMode: _settings.themeMode == AppThemeMode.light
+      themeMode: settings.themeMode == AppThemeMode.light
           ? ThemeMode.light
-          : (_settings.themeMode == AppThemeMode.system ? ThemeMode.system : ThemeMode.dark),
+          : (settings.themeMode == AppThemeMode.system ? ThemeMode.system : ThemeMode.dark),
       home: MainShell(
-        persistence: widget.persistence,
-        onAppSettingsChanged: _handleSettingsChanged,
+        persistence: persistence,
       ),
     );
   }
 }
 
-class MainShell extends StatefulWidget {
+class MainShell extends ConsumerStatefulWidget {
   final PersistenceService persistence;
   final VoidCallback? onAppSettingsChanged;
 
@@ -103,16 +103,10 @@ class MainShell extends StatefulWidget {
   });
 
   @override
-  State<MainShell> createState() => _MainShellState();
+  ConsumerState<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
-  int _activeTabIndex = 0;
-
-  late StoredGameSettings _settings;
-  late UserProgression _progression;
-  late Map<String, CharacterMastery> _masteryMap;
-
+class _MainShellState extends ConsumerState<MainShell> {
   final GlobalKey<ArenaScreenState> _arenaKey = GlobalKey<ArenaScreenState>();
   final GlobalKey<DashboardScreenState> _dashboardKey =
       GlobalKey<DashboardScreenState>();
@@ -121,23 +115,7 @@ class _MainShellState extends State<MainShell> {
   final GlobalKey<SettingsScreenState> _settingsKey =
       GlobalKey<SettingsScreenState>();
 
-  @override
-  void initState() {
-    super.initState();
-    _reloadPersistentState();
-  }
-
-  void _reloadPersistentState() {
-    setState(() {
-      _settings = widget.persistence.loadGameSettings();
-      _progression = widget.persistence.loadUserProgression();
-      _masteryMap = widget.persistence.loadMasteryMap();
-      AppColors.applyTheme(_settings.themeMode);
-    });
-  }
-
   void _onDataChanged() {
-    _reloadPersistentState();
     _arenaKey.currentState?.refreshData();
     _dashboardKey.currentState?.refreshData();
     _chartKey.currentState?.refreshData();
@@ -147,36 +125,20 @@ class _MainShellState extends State<MainShell> {
   }
 
   void _navigateToTab(int tabIndex) {
-    setState(() {
-      _activeTabIndex = tabIndex.clamp(0, 4);
-    });
-  }
-
-  void _toggleSound() {
-    final next = _settings.copyWith(soundEnabled: !_settings.soundEnabled);
-    setState(() {
-      _settings = next;
-    });
-    widget.persistence.saveGameSettings(next);
-    _arenaKey.currentState?.refreshData();
-    _settingsKey.currentState?.refreshData();
-  }
-
-  void _toggleVoice() {
-    final next = _settings.copyWith(voiceEnabled: !_settings.voiceEnabled);
-    setState(() {
-      _settings = next;
-    });
-    widget.persistence.saveGameSettings(next);
-    _arenaKey.currentState?.refreshData();
-    _settingsKey.currentState?.refreshData();
+    ref.read(activeTabProvider.notifier).state = tabIndex.clamp(0, 4);
   }
 
   @override
   Widget build(BuildContext context) {
+    final activeTabIndex = ref.watch(activeTabProvider);
+    final settings = ref.watch(gameSettingsProvider);
+    final progression = ref.watch(userProgressionProvider);
+    final unlockedAchievementsCount = ref.watch(unlockedAchievementsCountProvider);
+    final analysis = ref.watch(kanaPerformanceAnalysisProvider);
+
     final isPlatformDark =
         MediaQuery.maybePlatformBrightnessOf(context) == Brightness.dark;
-    AppColors.applyTheme(_settings.themeMode, isPlatformDark: isPlatformDark);
+    AppColors.applyTheme(settings.themeMode, isPlatformDark: isPlatformDark);
 
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
@@ -187,26 +149,15 @@ class _MainShellState extends State<MainShell> {
       ),
     );
 
-    final analysis = analyzeKanaPerformance(_masteryMap);
-    final achievements = getAchievementProgressList(_progression, _masteryMap);
-    final unlockedAchievementsCount =
-        achievements.where((a) => a.isUnlocked).length;
-
     return Scaffold(
       appBar: AppNavbar(
-        level: _progression.level,
+        level: progression.level,
         totalAchievements: achievementDefinitions.length,
         unlockedAchievements: unlockedAchievementsCount,
-        soundEnabled: _settings.soundEnabled,
-        voiceEnabled: _settings.voiceEnabled,
-        onToggleSound: _toggleSound,
-        onToggleVoice: _toggleVoice,
-        onOpenSettings: () => _navigateToTab(4),
-        isSettingsActive: _activeTabIndex == 4,
       ),
       body: SafeArea(
         child: IndexedStack(
-          index: _activeTabIndex,
+          index: activeTabIndex,
           children: [
             ArenaScreen(
               key: _arenaKey,
@@ -219,6 +170,10 @@ class _MainShellState extends State<MainShell> {
               persistence: widget.persistence,
               onDataChanged: _onDataChanged,
               onNavigateTab: _navigateToTab,
+              onStartWeakLetters: () {
+                _navigateToTab(0);
+                _arenaKey.currentState?.startWeakLettersSession();
+              },
             ),
             ChartScreen(
               key: _chartKey,
@@ -242,7 +197,7 @@ class _MainShellState extends State<MainShell> {
         ),
       ),
       bottomNavigationBar: AppBottomNav(
-        currentIndex: _activeTabIndex,
+        currentIndex: activeTabIndex,
         onTabSelected: _navigateToTab,
         weakCount: analysis.weakItems.length,
         masteredCount: analysis.strongItems.length,

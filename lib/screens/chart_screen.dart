@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/kana_data.dart';
 import '../logic/mastery_analytics.dart';
 import '../models/character_mastery.dart';
 import '../models/kana_item.dart';
+import '../providers/app_providers.dart';
 import '../services/persistence_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/character_detail_sheet.dart';
 
-class ChartScreen extends StatefulWidget {
+class ChartScreen extends ConsumerStatefulWidget {
   final PersistenceService persistence;
   final VoidCallback onDataChanged;
   final ValueChanged<int> onNavigateTab;
@@ -20,10 +22,10 @@ class ChartScreen extends StatefulWidget {
   });
 
   @override
-  State<ChartScreen> createState() => ChartScreenState();
+  ConsumerState<ChartScreen> createState() => ChartScreenState();
 }
 
-class ChartScreenState extends State<ChartScreen> {
+class ChartScreenState extends ConsumerState<ChartScreen> {
   KanaScript _script = KanaScript.hiragana;
   KanaCategory? _selectedCategory; // null = all
   String _searchQuery = '';
@@ -32,17 +34,11 @@ class ChartScreenState extends State<ChartScreen> {
   @override
   void initState() {
     super.initState();
-    _loadState();
-  }
-
-  void _loadState() {
-    setState(() {
-      _masteryMap = widget.persistence.loadMasteryMap();
-    });
+    _masteryMap = widget.persistence.loadMasteryMap();
   }
 
   void refreshData() {
-    _loadState();
+    ref.read(characterMasteryProvider.notifier).reload();
   }
 
   List<KanaItem> get _filteredKana {
@@ -67,6 +63,7 @@ class ChartScreenState extends State<ChartScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _masteryMap = ref.watch(characterMasteryProvider);
     final filtered = _filteredKana;
 
     return Padding(

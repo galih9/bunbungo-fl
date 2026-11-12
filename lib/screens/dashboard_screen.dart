@@ -1,59 +1,58 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../logic/dashboard_analytics.dart';
 import '../logic/mastery_analytics.dart';
 import '../models/character_mastery.dart';
 import '../models/game_settings.dart';
-import '../models/high_score.dart';
 import '../models/user_progression.dart';
+import '../providers/app_providers.dart';
 import '../services/persistence_service.dart';
 import '../services/sample_data_seeder.dart';
 import '../theme/app_theme.dart';
 import '../widgets/character_detail_sheet.dart';
+import '../widgets/lobby_progression_banner.dart';
 
-class DashboardScreen extends StatefulWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   final PersistenceService persistence;
   final VoidCallback onDataChanged;
   final ValueChanged<int> onNavigateTab;
+  final VoidCallback? onStartWeakLetters;
 
   const DashboardScreen({
     super.key,
     required this.persistence,
     required this.onDataChanged,
     required this.onNavigateTab,
+    this.onStartWeakLetters,
   });
 
   @override
-  State<DashboardScreen> createState() => DashboardScreenState();
+  ConsumerState<DashboardScreen> createState() => DashboardScreenState();
 }
 
-class DashboardScreenState extends State<DashboardScreen> {
-  late StoredGameSettings _settings;
+class DashboardScreenState extends ConsumerState<DashboardScreen> {
   late UserProgression _progression;
   late Map<String, CharacterMastery> _masteryMap;
-  late List<HighScoreRecord> _highScores;
 
   @override
   void initState() {
     super.initState();
-    _loadState();
-  }
-
-  void _loadState() {
-    setState(() {
-      _settings = widget.persistence.loadGameSettings();
-      _progression = widget.persistence.loadUserProgression();
-      _masteryMap = widget.persistence.loadMasteryMap();
-      _highScores = widget.persistence.loadHighScores();
-    });
+    _progression = widget.persistence.loadUserProgression();
+    _masteryMap = widget.persistence.loadMasteryMap();
   }
 
   void refreshData() {
-    _loadState();
+    ref.read(gameSettingsProvider.notifier).reload();
+    ref.read(userProgressionProvider.notifier).reload();
+    ref.read(characterMasteryProvider.notifier).reload();
+    ref.read(highScoresProvider.notifier).reload();
   }
 
   void _seedDemoData() {
-    SampleDataSeeder.seed(widget.persistence);
-    _loadState();
+    final seeded = SampleDataSeeder.seed(widget.persistence);
+    ref.read(characterMasteryProvider.notifier).setMasteryMap(seeded.masteryMap);
+    ref.read(userProgressionProvider.notifier).updateProgression(seeded.progression);
+    ref.read(highScoresProvider.notifier).setHighScores(seeded.highScores);
     widget.onDataChanged();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -82,7 +81,9 @@ class DashboardScreenState extends State<DashboardScreen> {
             onPressed: () {
               Navigator.pop(ctx);
               widget.persistence.clearAllProgress();
-              _loadState();
+              ref.read(characterMasteryProvider.notifier).clear();
+              ref.read(userProgressionProvider.notifier).reset();
+              ref.read(highScoresProvider.notifier).clear();
               widget.onDataChanged();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -103,13 +104,14 @@ class DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _handleRecommendation(StudyRecommendation rec) {
+    final currentSettings = ref.read(gameSettingsProvider);
     if (rec.actionType == StudyRecommendationType.katakanaFocus) {
-      widget.persistence.saveGameSettings(
-        _settings.copyWith(scriptMode: ScriptSelection.katakana),
+      ref.read(gameSettingsProvider.notifier).updateSettings(
+        currentSettings.copyWith(scriptMode: ScriptSelection.katakana),
       );
     } else if (rec.actionType == StudyRecommendationType.hiraganaFocus) {
-      widget.persistence.saveGameSettings(
-        _settings.copyWith(scriptMode: ScriptSelection.hiragana),
+      ref.read(gameSettingsProvider.notifier).updateSettings(
+        currentSettings.copyWith(scriptMode: ScriptSelection.hiragana),
       );
     }
     widget.onNavigateTab(0);
@@ -117,7 +119,9 @@ class DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final summary = buildDashboardSummary(_masteryMap, _progression, _highScores);
+    _progression = ref.watch(userProgressionProvider);
+    _masteryMap = ref.watch(characterMasteryProvider);
+    final summary = ref.watch(dashboardSummaryProvider);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -152,6 +156,20 @@ class DashboardScreenState extends State<DashboardScreen> {
                 style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
               ),
             ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // Learner Progression & Weak Kana Review Banner
+          LobbyProgressionBanner(
+            progression: _progression,
+            analysis: summary.analysis,
+            practiceFocusMode: PracticeFocusMode.standard,
+            onToggleFocusMode: () {},
+            onStartWeakLetters: () {
+              widget.onStartWeakLetters?.call();
+            },
+            onOpenAchievements: () => widget.onNavigateTab(3),
           ),
 
           const SizedBox(height: 16),

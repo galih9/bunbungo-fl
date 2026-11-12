@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../data/isar/isar_service.dart';
 import '../models/character_mastery.dart';
 import '../models/game_settings.dart';
 import '../models/high_score.dart';
@@ -12,15 +14,44 @@ class PersistenceService {
   static const String _progressionKey = 'bunbungo_offline_progression_v1';
 
   final SharedPreferences _prefs;
+  final IsarService? _isarService;
 
-  PersistenceService(this._prefs);
+  PersistenceService(this._prefs, [this._isarService]);
 
-  static Future<PersistenceService> getInstance() async {
+  IsarService? get isarService => _isarService;
+
+  static Future<PersistenceService> getInstance({
+    String? customDirectory,
+    bool? enableIsar,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
-    return PersistenceService(prefs);
+    IsarService? isarService;
+
+    // In FakeAsync widget tests, native async FFI locks unless customDirectory is provided
+    final isWidgetTest = WidgetsBinding.instance.runtimeType
+        .toString()
+        .contains('TestWidgetsFlutterBinding');
+    final shouldEnableIsar =
+        enableIsar ?? (!isWidgetTest || customDirectory != null);
+
+    if (shouldEnableIsar) {
+      try {
+        isarService = await IsarService.openInstance(
+          customDirectory: customDirectory,
+          prefs: prefs,
+        );
+      } catch (e) {
+        debugPrint('Could not initialize IsarService: $e. Falling back to SharedPreferences.');
+      }
+    }
+
+    return PersistenceService(prefs, isarService);
   }
 
   StoredGameSettings loadGameSettings() {
+    if (_isarService != null) {
+      return _isarService.loadGameSettings();
+    }
     try {
       final raw = _prefs.getString(_settingsKey);
       if (raw == null || raw.isEmpty) {
@@ -37,12 +68,18 @@ class PersistenceService {
   }
 
   Future<void> saveGameSettings(StoredGameSettings settings) async {
+    if (_isarService != null) {
+      await _isarService.saveGameSettings(settings);
+    }
     try {
       await _prefs.setString(_settingsKey, jsonEncode(settings.toJson()));
     } catch (_) {}
   }
 
   Map<String, CharacterMastery> loadMasteryMap() {
+    if (_isarService != null) {
+      return _isarService.loadMasteryMap();
+    }
     try {
       final raw = _prefs.getString(_masteryKey);
       if (raw == null || raw.isEmpty) return {};
@@ -65,6 +102,9 @@ class PersistenceService {
   }
 
   Future<void> saveMasteryMap(Map<String, CharacterMastery> mastery) async {
+    if (_isarService != null) {
+      await _isarService.saveMasteryMap(mastery);
+    }
     try {
       final map = {
         for (final entry in mastery.entries) entry.key: entry.value.toJson(),
@@ -74,6 +114,9 @@ class PersistenceService {
   }
 
   UserProgression loadUserProgression() {
+    if (_isarService != null) {
+      return _isarService.loadUserProgression();
+    }
     try {
       final raw = _prefs.getString(_progressionKey);
       if (raw == null || raw.isEmpty) return const UserProgression();
@@ -88,12 +131,18 @@ class PersistenceService {
   }
 
   Future<void> saveUserProgression(UserProgression progression) async {
+    if (_isarService != null) {
+      await _isarService.saveUserProgression(progression);
+    }
     try {
       await _prefs.setString(_progressionKey, jsonEncode(progression.toJson()));
     } catch (_) {}
   }
 
   List<HighScoreRecord> loadHighScores() {
+    if (_isarService != null) {
+      return _isarService.loadHighScores();
+    }
     try {
       final raw = _prefs.getString(_highScoresKey);
       if (raw == null || raw.isEmpty) return [];
@@ -111,9 +160,14 @@ class PersistenceService {
   }
 
   Future<List<HighScoreRecord>> saveHighScore(HighScoreRecord record) async {
-    final list = loadHighScores();
-    final updated = [record, ...list]..sort((a, b) => b.score.compareTo(a.score));
-    final trimmed = updated.take(15).toList();
+    List<HighScoreRecord> trimmed = [];
+    if (_isarService != null) {
+      trimmed = await _isarService.saveHighScore(record);
+    } else {
+      final list = loadHighScores();
+      final updated = [record, ...list]..sort((a, b) => b.score.compareTo(a.score));
+      trimmed = updated.take(15).toList();
+    }
     try {
       await _prefs.setString(
         _highScoresKey,
@@ -124,6 +178,9 @@ class PersistenceService {
   }
 
   Future<void> clearAllProgress() async {
+    if (_isarService != null) {
+      await _isarService.clearAllProgress();
+    }
     try {
       await _prefs.remove(_masteryKey);
       await _prefs.remove(_highScoresKey);
