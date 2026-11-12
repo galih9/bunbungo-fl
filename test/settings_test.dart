@@ -98,7 +98,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify app bar title
-      expect(find.text('About Bun Bun Go'), findsOneWidget);
+      expect(find.text('About BunBunGo'), findsOneWidget);
 
       // Verify PackageInfo details are loaded
       expect(find.text('v2.0.1 · Build 10'), findsOneWidget);
@@ -120,7 +120,7 @@ void main() {
       // Tap Check for Updates
       await tester.tap(find.text('Check for Updates'));
       await tester.pump();
-      expect(find.text('Bun Bun Go v2.0.1 is up to date!'), findsOneWidget);
+      expect(find.text('BunBunGo v2.0.1 is up to date!'), findsOneWidget);
     });
   });
 
@@ -211,15 +211,15 @@ void main() {
       expect(loaded.voiceSpeed, 1.2);
       expect(find.text('Configuration applied & saved successfully!'), findsOneWidget);
 
-      // Scroll to About section and tap About Bun Bun Go
+      // Scroll to About section and tap About BunBunGo
       await tester.scrollUntilVisible(
-        find.text('About Bun Bun Go'),
+        find.text('About BunBunGo'),
         200,
         scrollable: find.byType(Scrollable).first,
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('About Bun Bun Go'));
+      await tester.tap(find.text('About BunBunGo'));
       await tester.pumpAndSettle();
       expect(find.text('PACKAGE DETAILS'), findsOneWidget);
 

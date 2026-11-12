@@ -3,6 +3,11 @@ description: "A new Flutter project."
 
 publish_to: 'none'
 
+# BunBunGo versioning:
+# Format: MAJOR.MINOR.PATCH+BUILD_NUMBER (e.g. 1.0.0+1)
+# - MAJOR.MINOR.PATCH maps to Android versionName and iOS CFBundleShortVersionString.
+# - BUILD_NUMBER maps to Android versionCode and iOS CFBundleVersion.
+# You can also use: dart run tool/version.dart (show | bump build | bump patch | bump minor | bump major)
 version: 1.0.0+1
 
 environment:

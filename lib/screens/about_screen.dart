@@ -35,8 +35,8 @@ class _AboutScreenState extends State<AboutScreen> {
         setState(() {
           // Fallback info in case platform channel fails (e.g., in some test environments)
           _packageInfo = PackageInfo(
-            appName: 'Bun Bun Go',
-            packageName: 'com.example.bunbungo',
+            appName: 'BunBunGo',
+            packageName: 'com.galihriskipr.bunbungo',
             version: '1.0.0',
             buildNumber: '1',
             buildSignature: '',
@@ -53,7 +53,7 @@ class _AboutScreenState extends State<AboutScreen> {
     if (info == null) return;
 
     final details = '''
-Bun Bun Go System Info:
+BunBunGo System Info:
 • App Name: ${info.appName}
 • Package Name: ${info.packageName}
 • Version: ${info.version}
@@ -89,7 +89,7 @@ Bun Bun Go System Info:
           children: [
             const Icon(Icons.verified_rounded, color: Colors.white, size: 18),
             const SizedBox(width: 8),
-            Text('Bun Bun Go v${_packageInfo?.version ?? '1.0.0'} is up to date!'),
+            Text('BunBunGo v${_packageInfo?.version ?? '1.0.0'} is up to date!'),
           ],
         ),
         backgroundColor: AppColors.sky,
@@ -112,7 +112,7 @@ Bun Bun Go System Info:
           onPressed: () => Navigator.of(context).maybePop(),
         ),
         title: Text(
-          'About Bun Bun Go',
+          'About BunBunGo',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -197,7 +197,7 @@ Bun Bun Go System Info:
           Text(
             _packageInfo?.appName.isNotEmpty == true
                 ? _packageInfo!.appName
-                : 'Bun Bun Go',
+                : 'BunBunGo',
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -265,9 +265,9 @@ Bun Bun Go System Info:
             ],
           ),
           const SizedBox(height: 12),
-          _buildInfoRow('Application Name', info?.appName ?? 'Bun Bun Go'),
+          _buildInfoRow('Application Name', info?.appName ?? 'BunBunGo'),
           Divider(color: AppColors.border, height: 16),
-          _buildInfoRow('Package Identifier', info?.packageName ?? 'com.example.bunbungo'),
+          _buildInfoRow('Package Identifier', info?.packageName ?? 'com.galihriskipr.bunbungo'),
           Divider(color: AppColors.border, height: 16),
           _buildInfoRow('Semantic Version', info?.version ?? '1.0.0'),
           Divider(color: AppColors.border, height: 16),
@@ -498,7 +498,7 @@ Bun Bun Go System Info:
           onTap: () {
             showLicensePage(
               context: context,
-              applicationName: _packageInfo?.appName ?? 'Bun Bun Go',
+              applicationName: _packageInfo?.appName ?? 'BunBunGo',
               applicationVersion: 'v${_packageInfo?.version ?? '1.0.0'}',
               applicationLegalese: 'Crafted with precision for Japanese learners worldwide.',
             );
@@ -538,7 +538,7 @@ Bun Bun Go System Info:
     return Column(
       children: [
         Text(
-          'Bun Bun Go · Japanese Kana Learning System',
+          'BunBunGo · Japanese Kana Learning System',
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w500,

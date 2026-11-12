@@ -70,7 +70,7 @@ class _BunBunGoAppRoot extends ConsumerWidget {
     final isOled = settings.themeMode == AppThemeMode.oled;
 
     return MaterialApp(
-      title: 'Bun Bun Go',
+      title: 'BunBunGo',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.getTheme(
         AppThemeMode.light,

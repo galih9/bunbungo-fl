@@ -30,6 +30,7 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
   late StoredGameSettings _draftSettings;
   bool _isSaving = false;
   String _appVersion = '1.0.0';
+  String _buildNumber = '1';
   String? _audioFeedbackMessage;
   Timer? _feedbackTimer;
 
@@ -62,6 +63,7 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (mounted) {
         setState(() {
           _appVersion = info.version;
+          _buildNumber = info.buildNumber;
         });
       }
     } catch (_) {}
@@ -1373,7 +1375,7 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'About Bun Bun Go',
+                          'About BunBunGo',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -1382,7 +1384,7 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Package Info Plus · System Telemetry · v$_appVersion',
+                          'v$_appVersion · Build $_buildNumber',
                           style: TextStyle(
                             fontSize: 11,
                             color: AppColors.textMuted,
@@ -1403,8 +1405,8 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () {
               showLicensePage(
                 context: context,
-                applicationName: 'Bun Bun Go',
-                applicationVersion: 'v$_appVersion',
+                applicationName: 'BunBunGo',
+                applicationVersion: 'v$_appVersion · Build $_buildNumber',
               );
             },
             borderRadius: BorderRadius.circular(14),
