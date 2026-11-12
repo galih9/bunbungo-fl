@@ -424,76 +424,85 @@ class ArenaScreenState extends ConsumerState<ArenaScreen> {
                     left: 0,
                     right: 0,
                     bottom: 16,
-                    child: GlowPulseWidget(
-                      glowColor: AppColors.emerald,
-                      animate: true,
-                      minScale: 1.0,
-                      maxScale: 1.02,
-                      duration: const Duration(milliseconds: 1600),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.emerald.withValues(alpha: 0.3),
-                              blurRadius: 18,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: BouncingWidget(
-                          scaleFactor: 0.96,
-                          onTap: () {
-                            _store.setPracticeFocusMode(PracticeFocusMode.standard);
-                            startStandardSession();
-                          },
-                          child: ElevatedButton(
-                            onPressed: () {
-                              _store.setPracticeFocusMode(PracticeFocusMode.standard);
-                              startStandardSession();
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.emerald,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              elevation: 4,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.play_arrow_rounded, size: 24),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'Start Practice',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.4,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.22),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    '${activePool.length} Kana',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
+                    child: Builder(
+                      builder: (context) {
+                        final isDarkMinimal = AppColors.activeMode == AppThemeMode.darkMinimal;
+                        final buttonFg = isDarkMinimal ? Colors.black : Colors.white;
+
+                        return GlowPulseWidget(
+                          glowColor: AppColors.emerald,
+                          animate: !AppColors.isMinimal,
+                          minScale: 1.0,
+                          maxScale: 1.02,
+                          duration: const Duration(milliseconds: 1600),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.emerald.withValues(alpha: isDarkMinimal ? 0.15 : 0.3),
+                                  blurRadius: 18,
+                                  offset: const Offset(0, 4),
                                 ),
                               ],
                             ),
+                            child: BouncingWidget(
+                              scaleFactor: 0.96,
+                              onTap: () {
+                                _store.setPracticeFocusMode(PracticeFocusMode.standard);
+                                startStandardSession();
+                              },
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  _store.setPracticeFocusMode(PracticeFocusMode.standard);
+                                  startStandardSession();
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.emerald,
+                                  foregroundColor: buttonFg,
+                                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  elevation: 4,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.play_arrow_rounded, size: 24, color: buttonFg),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Start Practice',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 0.4,
+                                        color: buttonFg,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: buttonFg.withValues(alpha: isDarkMinimal ? 0.15 : 0.22),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        '${activePool.length} Kana',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: buttonFg,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     ),
                   ),
                 ],

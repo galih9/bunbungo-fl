@@ -82,6 +82,22 @@ void main() {
       expect(AppColors.isOled, isTrue);
       expect(AppColors.background, const Color(0xFF000000));
 
+      // Light Minimal
+      AppColors.applyTheme(AppThemeMode.lightMinimal);
+      expect(AppColors.isLight, isTrue);
+      expect(AppColors.isMinimal, isTrue);
+      expect(AppColors.background, const Color(0xFFFFFFFF));
+      expect(AppColors.text, const Color(0xFF000000));
+      expect(AppColors.emerald, const Color(0xFF000000));
+
+      // Dark Minimal
+      AppColors.applyTheme(AppThemeMode.darkMinimal);
+      expect(AppColors.isLight, isFalse);
+      expect(AppColors.isMinimal, isTrue);
+      expect(AppColors.background, const Color(0xFF000000));
+      expect(AppColors.text, const Color(0xFFFFFFFF));
+      expect(AppColors.emerald, const Color(0xFFFFFFFF));
+
       // Restore dark for subsequent tests
       AppColors.applyTheme(AppThemeMode.dark);
     });

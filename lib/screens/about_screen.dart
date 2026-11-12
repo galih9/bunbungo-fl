@@ -109,6 +109,33 @@ class _AboutScreenState extends State<AboutScreen> {
     }
   }
 
+  void _showSafeSnackBar(String message, {IconData? icon, Color? backgroundColor}) {
+    final bg = backgroundColor ?? AppColors.emerald;
+    final fg = bg.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            if (icon != null) ...[
+              Icon(icon, color: fg, size: 18),
+              const SizedBox(width: 8),
+            ],
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(color: fg),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: bg,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
   void _copyDetailsToClipboard() {
     final info = _packageInfo;
     if (info == null) return;
@@ -126,37 +153,15 @@ BunBunGo System Info:
     Clipboard.setData(ClipboardData(text: details.trim()));
     HapticFeedback.lightImpact();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(
-          children: [
-            Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
-            SizedBox(width: 8),
-            Text('App details copied to clipboard!'),
-          ],
-        ),
-        backgroundColor: AppColors.emerald,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
+    _showSafeSnackBar('App details copied to clipboard!', icon: Icons.check_circle_outline);
   }
 
   void _checkUpdates() {
     HapticFeedback.lightImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.verified_rounded, color: Colors.white, size: 18),
-            const SizedBox(width: 8),
-            Text('BunBunGo v${_packageInfo?.version ?? '1.0.0'} is up to date!'),
-          ],
-        ),
-        backgroundColor: AppColors.sky,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
+    _showSafeSnackBar(
+      'BunBunGo v${_packageInfo?.version ?? '1.0.0'} is up to date!',
+      icon: Icons.verified_rounded,
+      backgroundColor: AppColors.sky,
     );
   }
 
@@ -658,6 +663,11 @@ BunBunGo System Info:
                   value: _developerMode,
                   onChanged: (val) {
                     _setDeveloperMode(val);
+                    _showSafeSnackBar(
+                      val ? 'Developer Menu options enabled' : 'Developer Menu options disabled',
+                      icon: Icons.terminal_rounded,
+                      backgroundColor: AppColors.surfaceElevated,
+                    );
                   },
                   activeThumbColor: AppColors.amber,
                 ),
@@ -769,12 +779,7 @@ BunBunGo System Info:
                             if (achievementDefinitions.isNotEmpty) {
                               AchievementToast.show(context, achievementDefinitions.first);
                             }
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text('All achievements unlocked!'),
-                                backgroundColor: AppColors.emerald,
-                              ),
-                            );
+                            _showSafeSnackBar('All achievements unlocked!', icon: Icons.military_tech_rounded);
                           },
                           icon: const Icon(Icons.military_tech_rounded, size: 16),
                           label: const Text('Unlock All Badges', style: TextStyle(fontSize: 11)),
@@ -799,11 +804,9 @@ BunBunGo System Info:
                           _syncRiverpod();
                           widget.onDataChanged?.call();
                           HapticFeedback.lightImpact();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('Achievements reset to locked.'),
-                              backgroundColor: AppColors.textSecondary,
-                            ),
+                          _showSafeSnackBar(
+                            'Achievements reset to locked.',
+                            backgroundColor: AppColors.textSecondary,
                           );
                         },
                         style: OutlinedButton.styleFrom(
@@ -843,17 +846,9 @@ BunBunGo System Info:
                             _syncRiverpod();
                             widget.onDataChanged?.call();
                             HapticFeedback.mediumImpact();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Row(
-                                  children: [
-                                    Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
-                                    SizedBox(width: 8),
-                                    Text('Demo telemetry seeded! Check dashboard charts & stats.'),
-                                  ],
-                                ),
-                                backgroundColor: AppColors.emerald,
-                              ),
+                            _showSafeSnackBar(
+                              'Demo telemetry seeded! Check dashboard charts & stats.',
+                              icon: Icons.science_outlined,
                             );
                           },
                     icon: const Icon(Icons.science_outlined, size: 16),
@@ -935,12 +930,7 @@ BunBunGo System Info:
                             _syncRiverpod();
                             widget.onDataChanged?.call();
                             HapticFeedback.lightImpact();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text('+1,000 XP granted!'),
-                                backgroundColor: AppColors.emerald,
-                              ),
-                            );
+                            _showSafeSnackBar('+1,000 XP granted!', icon: Icons.bolt_rounded);
                           },
                           icon: const Icon(Icons.bolt_rounded, size: 16),
                           label: const Text('+1,000 XP', style: TextStyle(fontSize: 11)),
@@ -988,18 +978,21 @@ BunBunGo System Info:
               _syncRiverpod();
               widget.onDataChanged?.call();
               HapticFeedback.heavyImpact();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('All progress and telemetry has been reset.'),
-                  backgroundColor: AppColors.rose,
-                ),
+              _showSafeSnackBar(
+                'All progress and telemetry has been reset.',
+                backgroundColor: AppColors.rose,
               );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.rose,
-              foregroundColor: Colors.white,
+              foregroundColor: AppColors.rose.computeLuminance() > 0.5 ? Colors.black : Colors.white,
             ),
-            child: const Text('Reset'),
+            child: Text(
+              'Reset',
+              style: TextStyle(
+                color: AppColors.rose.computeLuminance() > 0.5 ? Colors.black : Colors.white,
+              ),
+            ),
           ),
         ],
       ),

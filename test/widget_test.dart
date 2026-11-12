@@ -36,15 +36,15 @@ void main() {
     // Verify progression banner is NOT in Arena tab
     expect(find.textContaining('XP Progress'), findsNothing);
 
-    // Verify bottom navigation tabs
-    expect(find.text('Arena'), findsOneWidget);
-    expect(find.text('Dashboard'), findsOneWidget);
-    expect(find.text('Chart'), findsOneWidget);
-    expect(find.text('Stats'), findsOneWidget);
-    expect(find.text('Settings'), findsOneWidget);
+    // Verify bottom navigation tabs (icon only, minimal display)
+    expect(find.byIcon(Icons.flash_on_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.insights_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.grid_view_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.emoji_events_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.tune_rounded), findsOneWidget);
 
     // Tap on Dashboard tab
-    await tester.tap(find.text('Dashboard'));
+    await tester.tap(find.byIcon(Icons.insights_rounded));
     await tester.pumpAndSettle();
     expect(find.text('PERFORMANCE DASHBOARD'), findsOneWidget);
 
@@ -52,17 +52,17 @@ void main() {
     expect(find.textContaining('XP Progress'), findsOneWidget);
 
     // Tap on Chart tab
-    await tester.tap(find.text('Chart'));
+    await tester.tap(find.byIcon(Icons.grid_view_rounded));
     await tester.pumpAndSettle();
     expect(find.text('SYLLABARY MATRIX'), findsOneWidget);
 
     // Tap on Stats tab
-    await tester.tap(find.text('Stats'));
+    await tester.tap(find.byIcon(Icons.emoji_events_rounded));
     await tester.pumpAndSettle();
-    expect(find.text('Codex Analytics'), findsOneWidget);
+    expect(find.text('Analytics'), findsOneWidget);
 
     // Tap on Settings tab
-    await tester.tap(find.text('Settings'));
+    await tester.tap(find.byIcon(Icons.tune_rounded));
     await tester.pumpAndSettle();
     expect(find.text('SFX & SOUND EFFECTS'), findsOneWidget);
     expect(find.text('VOICE & PRONUNCIATION'), findsOneWidget);

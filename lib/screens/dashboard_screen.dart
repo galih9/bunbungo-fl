@@ -75,33 +75,17 @@ class DashboardScreenState extends ConsumerState<DashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Screen Title
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'PERFORMANCE DASHBOARD',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                  color: AppColors.sky,
-                ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Text(
+              'PERFORMANCE DASHBOARD',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+                color: AppColors.textSecondary,
               ),
-              const SizedBox(height: 2),
-              Text(
-                'Learner Telemetry & Analytics',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.text,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Real-time accuracy distributions, mastery coverage, and smart study recommendations.',
-                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-              ),
-            ],
+            ),
           ),
 
           const SizedBox(height: 16),
@@ -256,19 +240,10 @@ class DashboardScreenState extends ConsumerState<DashboardScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${summary.coveragePercent}% Syllabary Coverage (${summary.analysis.totalAttempts} total attempts)',
+                      '${summary.coveragePercent}% coverage · ${summary.masteryPercent}% mastered',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 12,
                         color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${summary.masteryPercent}% Kana Mastered (Strong status)',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.emerald,
-                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -372,13 +347,13 @@ class DashboardScreenState extends ConsumerState<DashboardScreen> {
 
           // Weakest Kana
           Text(
-            'Needs Review (Lowest Accuracy)',
+            'Needs Review',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.rose),
           ),
           const SizedBox(height: 8),
           if (weakItems.isEmpty)
             Text(
-              'No weak characters! Practice more cards to detect trouble spots.',
+              'No weak characters.',
               style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
             )
           else
@@ -449,13 +424,13 @@ class DashboardScreenState extends ConsumerState<DashboardScreen> {
 
           // Strongest Kana
           Text(
-            'Top Mastered (High Reflex Speed)',
+            'Top Mastered',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.emerald),
           ),
           const SizedBox(height: 8),
           if (strongItems.isEmpty)
             Text(
-              'Complete sprints to build strong mastery tiers.',
+              'Practice to build mastery.',
               style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
             )
           else
@@ -579,11 +554,16 @@ class DashboardScreenState extends ConsumerState<DashboardScreen> {
                     onPressed: () => _handleRecommendation(rec),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: accent,
-                      foregroundColor: Colors.black,
+                      foregroundColor: accent.computeLuminance() > 0.5 ? Colors.black : Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                     ),
-                    child: Text(rec.actionLabel),
+                    child: Text(
+                      rec.actionLabel,
+                      style: TextStyle(
+                        color: accent.computeLuminance() > 0.5 ? Colors.black : Colors.white,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -657,8 +637,9 @@ class DashboardScreenState extends ConsumerState<DashboardScreen> {
           const SizedBox(height: 12),
 
           // Legend
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            spacing: 12,
+            runSpacing: 6,
             children: [
               _buildLegendItem('Strong', strong, total, AppColors.emerald),
               _buildLegendItem('Learning', learning, total, AppColors.amber),
@@ -720,10 +701,14 @@ class DashboardScreenState extends ConsumerState<DashboardScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        '${bucket.label} (${bucket.rangeLabel})',
-                        style: TextStyle(fontSize: 11, color: AppColors.text),
+                      Expanded(
+                        child: Text(
+                          '${bucket.label} (${bucket.rangeLabel})',
+                          style: TextStyle(fontSize: 11, color: AppColors.text),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       Text(
                         '${bucket.count} letters (${bucket.sharePercent}%)',
                         style: TextStyle(fontSize: 11, color: AppColors.textSecondary),

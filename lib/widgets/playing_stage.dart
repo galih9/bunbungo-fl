@@ -66,7 +66,6 @@ class _PlayingStageState extends State<PlayingStage> {
 
   @override
   Widget build(BuildContext context) {
-    final comboMultiplier = (1 + (widget.streak ~/ 5)).clamp(1, 4);
     final isTimeAttackUrgent = widget.settings.gameMode == GameMode.timeAttack &&
         widget.remainingSeconds <= 10;
 
@@ -140,49 +139,26 @@ class _PlayingStageState extends State<PlayingStage> {
               ),
             ),
 
-            // Score & Streak with Pulsing Juice
-            Row(
-              children: [
-                if (widget.streak > 1) ...[
-                  GlowPulseWidget(
-                    glowColor: AppColors.amber,
-                    animate: widget.streak >= 3,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppColors.amber.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: AppColors.amber.withValues(alpha: 0.5)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text('🔥', style: TextStyle(fontSize: 11)),
-                          const SizedBox(width: 3),
-                          Text(
-                            '${widget.streak}x ($comboMultiplier倍)',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.amber,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                ],
-                Text(
-                  '${widget.score} pts',
+            // Streak indicator (calm & subtle)
+            if (widget.streak > 1)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Text(
+                  '${widget.streak} streak',
                   style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.text,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
                   ),
                 ),
-              ],
-            ),
+              )
+            else
+              const SizedBox(width: 32),
           ],
         ),
 
@@ -218,26 +194,28 @@ class _PlayingStageState extends State<PlayingStage> {
                       color: widget.feedback != null
                           ? (widget.feedback!.isCorrect ? AppColors.emerald : AppColors.rose)
                           : AppColors.border,
-                      width: widget.feedback != null ? 2.2 : 1.0,
+                      width: widget.feedback != null ? 2.0 : 1.0,
                     ),
-                    boxShadow: widget.feedback != null
-                        ? [
-                            BoxShadow(
-                              color: (widget.feedback!.isCorrect
-                                      ? AppColors.emerald
-                                      : AppColors.rose)
-                                  .withValues(alpha: 0.28),
-                              blurRadius: 22,
-                              spreadRadius: 3,
-                            ),
-                          ]
-                        : [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.15),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+                    boxShadow: AppColors.isMinimal
+                        ? null
+                        : widget.feedback != null
+                            ? [
+                                BoxShadow(
+                                  color: (widget.feedback!.isCorrect
+                                          ? AppColors.emerald
+                                          : AppColors.rose)
+                                      .withValues(alpha: 0.28),
+                                  blurRadius: 22,
+                                  spreadRadius: 3,
+                                ),
+                              ]
+                            : [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.15),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                   ),
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
@@ -367,10 +345,10 @@ class _PlayingStageState extends State<PlayingStage> {
                                       size: 14, color: AppColors.textMuted),
                                   const SizedBox(width: 4),
                                   Text(
-                                    'Show Hint (-25 pts)',
+                                    'Hint',
                                     style: TextStyle(
-                                      fontSize: 11,
-                                      color: AppColors.textMuted,
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
                                     ),
                                   ),
                                 ],
@@ -392,44 +370,26 @@ class _PlayingStageState extends State<PlayingStage> {
                               );
                             },
                             child: widget.feedback!.isCorrect
-                                ? Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.check_circle_rounded,
-                                          size: 16, color: AppColors.emerald),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        '+${widget.feedback!.pointsEarned} pts',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.emerald,
-                                        ),
-                                      ),
-                                      if (widget.feedback!.speedTier != null) ...[
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          widget.feedback!.speedTier!.label,
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: AppColors.textSecondary,
-                                          ),
-                                        ),
-                                      ],
-                                    ],
+                                ? Icon(
+                                    Icons.check_circle_rounded,
+                                    size: 24,
+                                    color: AppColors.isMinimal ? AppColors.text : AppColors.emerald,
                                   )
                                 : Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(Icons.cancel_rounded,
-                                          size: 16, color: AppColors.rose),
+                                      Icon(
+                                        Icons.cancel_rounded,
+                                        size: 18,
+                                        color: AppColors.isMinimal ? AppColors.text : AppColors.rose,
+                                      ),
                                       const SizedBox(width: 6),
                                       Text(
                                         'Answer: ${widget.feedback!.expectedRomaji}',
                                         style: TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,
-                                          color: AppColors.rose,
+                                          color: AppColors.isMinimal ? AppColors.text : AppColors.rose,
                                         ),
                                       ),
                                     ],

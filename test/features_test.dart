@@ -167,17 +167,17 @@ void main() {
       await tester.pumpAndSettle();
 
       // Bottom nav is visible in lobby
-      expect(find.text('Arena'), findsOneWidget);
-      expect(find.text('Dashboard'), findsOneWidget);
+      expect(find.byIcon(Icons.flash_on_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.insights_rounded), findsOneWidget);
 
       // Tap Start Practice to enter practice session
       await tester.tap(find.text('Start Practice'));
       await tester.pumpAndSettle();
 
       // Bottom nav is now hidden
-      expect(find.text('Dashboard'), findsNothing);
-      expect(find.text('Chart'), findsNothing);
-      expect(find.text('Settings'), findsNothing);
+      expect(find.byIcon(Icons.insights_rounded), findsNothing);
+      expect(find.byIcon(Icons.grid_view_rounded), findsNothing);
+      expect(find.byIcon(Icons.tune_rounded), findsNothing);
     });
   });
 

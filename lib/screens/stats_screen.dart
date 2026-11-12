@@ -143,7 +143,7 @@ class StatsScreenState extends ConsumerState<StatsScreen> {
           Row(
             children: [
               _SubTabButton(
-                label: 'Codex Analytics',
+                label: 'Analytics',
                 isSelected: _subTab == StatsSubTab.analytics,
                 onTap: () {
                   setState(() {
@@ -390,29 +390,29 @@ class StatsScreenState extends ConsumerState<StatsScreen> {
         final item = achievements[index];
 
         return Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: item.isUnlocked
-                  ? AppColors.purple.withValues(alpha: 0.4)
+                  ? (AppColors.isMinimal ? AppColors.borderLight : AppColors.purple.withValues(alpha: 0.4))
                   : AppColors.border,
             ),
           ),
           child: Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
                   color: item.isUnlocked
-                      ? AppColors.purple.withValues(alpha: 0.2)
+                      ? (AppColors.isMinimal ? AppColors.surfaceElevated : AppColors.purple.withValues(alpha: 0.15))
                       : AppColors.surfaceElevated,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: item.isUnlocked
-                        ? AppColors.purple
+                        ? (AppColors.isMinimal ? AppColors.textSecondary : AppColors.purple)
                         : AppColors.border,
                   ),
                 ),
@@ -423,7 +423,7 @@ class StatsScreenState extends ConsumerState<StatsScreen> {
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: item.isUnlocked
-                        ? AppColors.purple
+                        ? (AppColors.isMinimal ? AppColors.text : AppColors.purple)
                         : AppColors.textMuted,
                   ),
                 ),
@@ -435,53 +435,51 @@ class StatsScreenState extends ConsumerState<StatsScreen> {
                   children: [
                     Row(
                       children: [
-                        Text(
-                          item.title,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: item.isUnlocked
-                                ? AppColors.text
-                                : AppColors.textSecondary,
+                        Expanded(
+                          child: Text(
+                            item.title,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: item.isUnlocked
+                                  ? AppColors.text
+                                  : AppColors.textSecondary,
+                            ),
                           ),
                         ),
-                        if (item.isUnlocked) ...[
-                          const SizedBox(width: 6),
-                          Icon(Icons.check_circle_rounded,
-                              size: 13, color: AppColors.purple),
-                        ],
+                        if (item.isUnlocked)
+                          Icon(
+                            Icons.check_circle_rounded,
+                            size: 14,
+                            color: AppColors.isMinimal ? AppColors.text : AppColors.purple,
+                          ),
                       ],
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      item.description,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textSecondary,
+                    if (item.isUnlocked) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        item.description,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 6),
+                    ],
+                    const SizedBox(height: 4),
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(3),
+                      borderRadius: BorderRadius.circular(2),
                       child: LinearProgressIndicator(
                         value: item.progressPercent / 100.0,
-                        minHeight: 4,
+                        minHeight: 3,
                         backgroundColor: AppColors.surfaceElevated,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          item.isUnlocked ? AppColors.purple : AppColors.amber,
+                          item.isUnlocked
+                              ? (AppColors.isMinimal ? AppColors.text : AppColors.purple)
+                              : (AppColors.isMinimal ? AppColors.textMuted : AppColors.amber),
                         ),
                       ),
                     ),
                   ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '+${item.xpReward} XP',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.amber,
                 ),
               ),
             ],

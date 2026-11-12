@@ -31,8 +31,8 @@ class AppBottomNav extends StatelessWidget {
         ),
       ),
       padding: EdgeInsets.only(
-        top: 6,
-        bottom: MediaQuery.of(context).padding.bottom + 6,
+        top: 8,
+        bottom: MediaQuery.of(context).padding.bottom + 8,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -113,27 +113,35 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isSelected = index == currentIndex;
+    final iconColor = isSelected ? activeColor : AppColors.textSecondary;
 
-    return BouncingWidget(
-      scaleFactor: 0.92,
-      onTap: () {
-        try {
-          HapticFeedback.lightImpact();
-        } catch (_) {}
-        onTap();
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-        decoration: BoxDecoration(
-          color: isSelected ? activeColor.withValues(alpha: 0.12) : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
+    return Semantics(
+      label: label,
+      button: true,
+      selected: isSelected,
+      child: Tooltip(
+        message: label,
+        child: BouncingWidget(
+          scaleFactor: 0.92,
+          onTap: () {
+            try {
+              HapticFeedback.lightImpact();
+            } catch (_) {}
+            onTap();
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? (AppColors.isMinimal
+                      ? AppColors.surfaceElevated
+                      : activeColor.withValues(alpha: 0.12))
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Stack(
               clipBehavior: Clip.none,
               children: [
                 AnimatedScale(
@@ -142,8 +150,8 @@ class _NavItem extends StatelessWidget {
                   curve: Curves.easeOutBack,
                   child: Icon(
                     icon,
-                    size: 22,
-                    color: isSelected ? activeColor : AppColors.textSecondary,
+                    size: 24,
+                    color: iconColor,
                   ),
                 ),
                 if (badge != null)
@@ -165,12 +173,14 @@ class _NavItem extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: badgeColor ?? AppColors.rose,
                           borderRadius: BorderRadius.circular(8),
-                          boxShadow: [
-                            BoxShadow(
-                              color: (badgeColor ?? AppColors.rose).withValues(alpha: 0.35),
-                              blurRadius: 4,
-                            ),
-                          ],
+                          boxShadow: AppColors.isMinimal
+                              ? null
+                              : [
+                                  BoxShadow(
+                                    color: (badgeColor ?? AppColors.rose).withValues(alpha: 0.35),
+                                    blurRadius: 4,
+                                  ),
+                                ],
                         ),
                         child: Text(
                           badge!,
@@ -185,27 +195,7 @@ class _NavItem extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? activeColor : AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 2),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOutCubic,
-              width: isSelected ? 14 : 0,
-              height: 2.5,
-              decoration: BoxDecoration(
-                color: isSelected ? activeColor : Colors.transparent,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

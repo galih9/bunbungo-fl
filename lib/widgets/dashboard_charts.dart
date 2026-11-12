@@ -357,35 +357,44 @@ class _RecallSpeedPerformanceChartState extends State<RecallSpeedPerformanceChar
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.speed_rounded, size: 16, color: AppColors.sky),
-                      const SizedBox(width: 6),
-                      Text(
-                        'PRACTICE PERFORMANCE',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.1,
-                          color: AppColors.sky,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.speed_rounded, size: 16, color: AppColors.sky),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            'PRACTICE PERFORMANCE',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.1,
+                              color: AppColors.sky,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Letter Recall Speed',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.text,
+                      ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      'Letter Recall Speed',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.text,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
 
               // Segmented Mode Toggle
               Container(
@@ -512,6 +521,8 @@ class _RecallSpeedPerformanceChartState extends State<RecallSpeedPerformanceChar
               letterSpacing: 0.8,
               color: AppColors.textMuted,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 3),
           Text(

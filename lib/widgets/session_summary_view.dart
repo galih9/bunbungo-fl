@@ -159,20 +159,20 @@ class SessionSummaryView extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'PROGRESSION EARNED',
+                            'SESSION SUMMARY',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1.1,
-                              color: AppColors.textMuted,
+                              color: AppColors.textSecondary,
                             ),
                           ),
                           Text(
-                            '+${result!.xpEarned} XP',
+                            'Level ${result!.newLevel}',
                             style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.emerald,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.text,
                             ),
                           ),
                         ],

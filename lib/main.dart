@@ -69,20 +69,27 @@ class _BunBunGoAppRoot extends ConsumerWidget {
     AppColors.applyTheme(settings.themeMode, isPlatformDark: isPlatformDark);
     final isOled = settings.themeMode == AppThemeMode.oled;
 
+    final isLightMode = settings.themeMode == AppThemeMode.light ||
+        settings.themeMode == AppThemeMode.lightMinimal;
+
     return MaterialApp(
       title: 'BunBunGo',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.getTheme(
-        AppThemeMode.light,
+        settings.themeMode == AppThemeMode.lightMinimal
+            ? AppThemeMode.lightMinimal
+            : AppThemeMode.light,
         accent: settings.accentColor,
         isPlatformDark: false,
       ),
       darkTheme: AppTheme.getTheme(
-        isOled ? AppThemeMode.oled : AppThemeMode.dark,
+        settings.themeMode == AppThemeMode.darkMinimal
+            ? AppThemeMode.darkMinimal
+            : (isOled ? AppThemeMode.oled : AppThemeMode.dark),
         accent: settings.accentColor,
         isPlatformDark: true,
       ),
-      themeMode: settings.themeMode == AppThemeMode.light
+      themeMode: isLightMode
           ? ThemeMode.light
           : (settings.themeMode == AppThemeMode.system ? ThemeMode.system : ThemeMode.dark),
       home: MainShell(

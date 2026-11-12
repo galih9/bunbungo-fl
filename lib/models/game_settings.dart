@@ -21,7 +21,9 @@ enum AppThemeMode {
   system,
   dark,
   light,
-  oled;
+  oled,
+  lightMinimal,
+  darkMinimal;
 
   String get label {
     switch (this) {
@@ -33,6 +35,10 @@ enum AppThemeMode {
         return 'Light Zen';
       case AppThemeMode.oled:
         return 'Midnight OLED';
+      case AppThemeMode.lightMinimal:
+        return 'Light Minimal';
+      case AppThemeMode.darkMinimal:
+        return 'Dark Minimal';
     }
   }
 
@@ -46,6 +52,10 @@ enum AppThemeMode {
         return 'Clean paper white aesthetic with crisp contrast';
       case AppThemeMode.oled:
         return 'Pure pitch black mode for OLED displays';
+      case AppThemeMode.lightMinimal:
+        return 'Pure light background with black text only, no colors';
+      case AppThemeMode.darkMinimal:
+        return 'Pure dark background with white text only, no colors';
     }
   }
 }

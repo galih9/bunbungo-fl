@@ -131,13 +131,21 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
 
       AudioService.playVictory(_draftSettings.soundEnabled, haptic: _draftSettings.hapticEnabled);
 
+      final isDarkMinimal = AppColors.activeMode == AppThemeMode.darkMinimal;
+      final snackbarFg = isDarkMinimal ? Colors.black : Colors.white;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(
+          content: Row(
             children: [
-              Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
-              SizedBox(width: 8),
-              Text('Configuration applied & saved successfully!'),
+              Icon(Icons.check_circle_rounded, color: snackbarFg, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Configuration applied & saved successfully!',
+                  style: TextStyle(color: snackbarFg),
+                ),
+              ),
             ],
           ),
           backgroundColor: AppColors.emerald,
@@ -171,9 +179,14 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.emerald,
-              foregroundColor: Colors.black,
+              foregroundColor: AppColors.emerald.computeLuminance() > 0.5 ? Colors.black : Colors.white,
             ),
-            child: const Text('Reset Draft'),
+            child: Text(
+              'Reset Draft',
+              style: TextStyle(
+                color: AppColors.emerald.computeLuminance() > 0.5 ? Colors.black : Colors.white,
+              ),
+            ),
           ),
         ],
       ),
@@ -201,19 +214,9 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Preferences & Config',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1.0,
-                                  color: _draftSettings.accentColor.color,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
                                 'Settings',
                                 style: TextStyle(
-                                  fontSize: 24,
+                                  fontSize: 22,
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.text,
                                 ),
@@ -422,7 +425,7 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
       ),
       padding: const EdgeInsets.all(16),
@@ -431,42 +434,23 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceElevated,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(Icons.music_note_rounded, size: 18, color: AppColors.emerald),
-              ),
-              const SizedBox(width: 10),
+              Icon(Icons.music_note_rounded, size: 18, color: AppColors.textSecondary),
+              const SizedBox(width: 8),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'SFX & SOUND EFFECTS',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.8,
-                        color: AppColors.emerald,
-                      ),
-                    ),
-                    Text(
-                      'Game interaction and feedback audio',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'SFX & SOUND EFFECTS',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.8,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
               Switch(
                 value: _draftSettings.soundEnabled,
-                activeThumbColor: AppColors.emerald,
-                activeTrackColor: AppColors.emerald.withValues(alpha: 0.3),
+                activeThumbColor: AppColors.text,
+                activeTrackColor: AppColors.text.withValues(alpha: 0.3),
                 onChanged: (val) {
                   _updateDraft(_draftSettings.copyWith(soundEnabled: val));
                   AudioService.playClick(val, haptic: _draftSettings.hapticEnabled);
@@ -475,35 +459,26 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Divider(color: AppColors.border, height: 1),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
           // Haptic Switch
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Haptic Vibration',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.text,
-                    ),
-                  ),
-                  Text(
-                    'Vibration pulses on answer taps and combos',
-                    style: TextStyle(fontSize: 11, color: AppColors.textMuted),
-                  ),
-                ],
+              Text(
+                'Haptic Vibration',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.text,
+                ),
               ),
               Switch(
                 value: _draftSettings.hapticEnabled,
-                activeThumbColor: AppColors.emerald,
-                activeTrackColor: AppColors.emerald.withValues(alpha: 0.3),
+                activeThumbColor: AppColors.text,
+                activeTrackColor: AppColors.text.withValues(alpha: 0.3),
                 onChanged: (val) {
                   _updateDraft(_draftSettings.copyWith(hapticEnabled: val));
                   AudioService.playClick(_draftSettings.soundEnabled, haptic: val);
@@ -525,7 +500,7 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
                     'SFX Volume',
                     style: TextStyle(
                       fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w500,
                       color: AppColors.text,
                     ),
                   ),
@@ -534,17 +509,17 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.emerald,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
               ),
               SliderTheme(
                 data: SliderTheme.of(context).copyWith(
-                  activeTrackColor: AppColors.emerald,
+                  activeTrackColor: AppColors.text,
                   inactiveTrackColor: AppColors.surfaceElevated,
-                  thumbColor: AppColors.emerald,
-                  overlayColor: AppColors.emerald.withValues(alpha: 0.2),
+                  thumbColor: AppColors.text,
+                  overlayColor: AppColors.text.withValues(alpha: 0.1),
                 ),
                 child: Slider(
                   value: _draftSettings.sfxVolume,
@@ -577,8 +552,8 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
             children: [
               _buildSoundTestButton(
                 label: 'Correct',
-                icon: Icons.check_circle_rounded,
-                color: AppColors.emerald,
+                icon: Icons.check_circle_outline_rounded,
+                color: AppColors.text,
                 onTap: () {
                   AudioService.playCorrect(1, _draftSettings.soundEnabled, haptic: _draftSettings.hapticEnabled);
                   _showAudioFeedback('Tested: Correct Answer SFX');
@@ -586,8 +561,8 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               _buildSoundTestButton(
                 label: 'Wrong',
-                icon: Icons.cancel_rounded,
-                color: AppColors.rose,
+                icon: Icons.cancel_outlined,
+                color: AppColors.text,
                 onTap: () {
                   AudioService.playWrong(_draftSettings.soundEnabled, haptic: _draftSettings.hapticEnabled);
                   _showAudioFeedback('Tested: Wrong Alert SFX');
@@ -595,8 +570,8 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               _buildSoundTestButton(
                 label: 'Victory',
-                icon: Icons.emoji_events_rounded,
-                color: AppColors.amber,
+                icon: Icons.emoji_events_outlined,
+                color: AppColors.text,
                 onTap: () {
                   AudioService.playVictory(_draftSettings.soundEnabled, haptic: _draftSettings.hapticEnabled);
                   _showAudioFeedback('Tested: Victory Chime SFX');
@@ -604,8 +579,8 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               _buildSoundTestButton(
                 label: 'Tap',
-                icon: Icons.touch_app_rounded,
-                color: AppColors.sky,
+                icon: Icons.touch_app_outlined,
+                color: AppColors.text,
                 onTap: () {
                   AudioService.playClick(_draftSettings.soundEnabled, haptic: _draftSettings.hapticEnabled);
                   _showAudioFeedback('Tested: Click SFX');
@@ -626,24 +601,24 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
           color: AppColors.surfaceElevated,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.border),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 14, color: color),
+            Icon(icon, size: 14, color: AppColors.textSecondary),
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
                 fontSize: 11,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w500,
                 color: color,
               ),
             ),
@@ -660,7 +635,7 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
       ),
       padding: const EdgeInsets.all(16),
@@ -669,42 +644,23 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceElevated,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(Icons.record_voice_over_rounded, size: 18, color: AppColors.sky),
-              ),
-              const SizedBox(width: 10),
+              Icon(Icons.record_voice_over_rounded, size: 18, color: AppColors.textSecondary),
+              const SizedBox(width: 8),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'VOICE & PRONUNCIATION',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.8,
-                        color: AppColors.sky,
-                      ),
-                    ),
-                    Text(
-                      'Spoken audio cues and Kana pronunciation',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'VOICE & PRONUNCIATION',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.8,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
               Switch(
                 value: _draftSettings.voiceEnabled,
-                activeThumbColor: AppColors.sky,
-                activeTrackColor: AppColors.sky.withValues(alpha: 0.3),
+                activeThumbColor: AppColors.text,
+                activeTrackColor: AppColors.text.withValues(alpha: 0.3),
                 onChanged: (val) {
                   _updateDraft(_draftSettings.copyWith(voiceEnabled: val));
                   AudioService.playVoiceSample(val, haptic: _draftSettings.hapticEnabled);
@@ -713,35 +669,26 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Divider(color: AppColors.border, height: 1),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
           // Auto-Play Voice on Reveal
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Auto-Speak Kana Cards',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.text,
-                    ),
-                  ),
-                  Text(
-                    'Pronounce automatically when cards appear',
-                    style: TextStyle(fontSize: 11, color: AppColors.textMuted),
-                  ),
-                ],
+              Text(
+                'Auto-Speak Kana Cards',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.text,
+                ),
               ),
               Switch(
                 value: _draftSettings.autoPlayVoice,
-                activeThumbColor: AppColors.sky,
-                activeTrackColor: AppColors.sky.withValues(alpha: 0.3),
+                activeThumbColor: AppColors.text,
+                activeTrackColor: AppColors.text.withValues(alpha: 0.3),
                 onChanged: (val) {
                   _updateDraft(_draftSettings.copyWith(autoPlayVoice: val));
                   AudioService.playClick(_draftSettings.soundEnabled, haptic: _draftSettings.hapticEnabled);
@@ -750,14 +697,14 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
           // Speech Rate Selector
           Text(
             'Pronunciation Pace',
             style: TextStyle(
               fontSize: 13,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w500,
               color: AppColors.text,
             ),
           ),
@@ -771,7 +718,7 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
               _buildSpeedChip(label: 'Fast (1.2x)', speed: 1.2),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
           // Voice Preview Tester
           InkWell(
@@ -779,50 +726,34 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
               AudioService.playVoiceSample(_draftSettings.voiceEnabled, haptic: _draftSettings.hapticEnabled);
               _showAudioFeedback('🔊 Speaking: "あ (a)" at ${_draftSettings.voiceSpeed}x');
             },
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: AppColors.surfaceElevated,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.sky.withValues(alpha: 0.4)),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.border),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.volume_up_rounded, color: AppColors.sky, size: 20),
+                  Icon(Icons.volume_up_rounded, color: AppColors.textSecondary, size: 18),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Test Kana Voice Sample',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.text,
-                          ),
-                        ),
-                        Text(
-                          'Preview native phonetics and pronunciation cadence',
-                          style: TextStyle(fontSize: 10, color: AppColors.textMuted),
-                        ),
-                      ],
+                    child: Text(
+                      'Test Kana Voice Sample',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.text,
+                      ),
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.sky.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      'Preview',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.sky,
-                      ),
+                  Text(
+                    'Preview',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -847,10 +778,10 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.sky.withValues(alpha: 0.2) : AppColors.surfaceElevated,
+            color: isSelected ? AppColors.surfaceElevated : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: isSelected ? AppColors.sky : AppColors.border,
+              color: isSelected ? AppColors.text : AppColors.border,
               width: isSelected ? 1.5 : 1,
             ),
           ),
@@ -860,7 +791,7 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
             style: TextStyle(
               fontSize: 11,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              color: isSelected ? AppColors.sky : AppColors.textSecondary,
+              color: isSelected ? AppColors.text : AppColors.textSecondary,
             ),
           ),
         ),
@@ -875,7 +806,7 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
       ),
       padding: const EdgeInsets.all(16),
@@ -884,50 +815,31 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceElevated,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(Icons.palette_rounded, size: 18, color: AppColors.purple),
-              ),
-              const SizedBox(width: 10),
+              Icon(Icons.palette_rounded, size: 18, color: AppColors.textSecondary),
+              const SizedBox(width: 8),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'APP THEME & DISPLAY',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.8,
-                        color: AppColors.purple,
-                      ),
-                    ),
-                    Text(
-                      'Aesthetic presentation and color accents',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'APP THEME & DISPLAY',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.8,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Divider(color: AppColors.border, height: 1),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
           // Theme Mode Selector Cards
           Text(
             'Visual Atmosphere',
             style: TextStyle(
               fontSize: 13,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w500,
               color: AppColors.text,
             ),
           ),
@@ -973,6 +885,22 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
                 cardPreview: const Color(0xFF3F3F46),
                 accentPreview: const Color(0xFFFBBF24),
               ),
+              _buildThemeOptionCard(
+                mode: AppThemeMode.lightMinimal,
+                title: 'Light Minimal',
+                subtitle: 'Monochrome light',
+                bgPreview: const Color(0xFFFFFFFF),
+                cardPreview: const Color(0xFFF4F4F6),
+                accentPreview: const Color(0xFF000000),
+              ),
+              _buildThemeOptionCard(
+                mode: AppThemeMode.darkMinimal,
+                title: 'Dark Minimal',
+                subtitle: 'Monochrome dark',
+                bgPreview: const Color(0xFF000000),
+                cardPreview: const Color(0xFF18181B),
+                accentPreview: const Color(0xFFFFFFFF),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -982,7 +910,7 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
             'Primary Accent Tone',
             style: TextStyle(
               fontSize: 13,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w500,
               color: AppColors.text,
             ),
           ),
@@ -1000,30 +928,21 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
                 child: Column(
                   children: [
                     Container(
-                      width: 44,
-                      height: 44,
+                      width: 38,
+                      height: 38,
                       decoration: BoxDecoration(
                         color: accent.color,
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: isSelected ? Colors.white : Colors.transparent,
-                          width: 2.5,
+                          width: 2.0,
                         ),
-                        boxShadow: isSelected
-                            ? [
-                                BoxShadow(
-                                  color: accent.color.withValues(alpha: 0.5),
-                                  blurRadius: 10,
-                                  spreadRadius: 1,
-                                ),
-                              ]
-                            : null,
                       ),
                       child: isSelected
-                          ? const Icon(Icons.check_rounded, color: Colors.black, size: 20)
+                          ? const Icon(Icons.check_rounded, color: Colors.black, size: 18)
                           : null,
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     Text(
                       accent.label,
                       style: TextStyle(
@@ -1058,43 +977,43 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
         AudioService.playClick(_draftSettings.soundEnabled, haptic: _draftSettings.hapticEnabled);
         _showAudioFeedback('Theme selected: $title (Click Save to apply)');
       },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(10),
       child: Container(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: AppColors.surfaceElevated,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? _draftSettings.accentColor.color : AppColors.border,
-            width: isSelected ? 2 : 1,
+            color: isSelected ? AppColors.text : AppColors.border,
+            width: isSelected ? 1.5 : 1.0,
           ),
         ),
         child: Row(
           children: [
             // Preview Swatch
             Container(
-              width: 32,
-              height: 38,
+              width: 26,
+              height: 32,
               decoration: BoxDecoration(
                 color: bgPreview,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(6),
                 border: Border.all(color: AppColors.borderLight),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                    width: 18,
-                    height: 8,
+                    width: 14,
+                    height: 6,
                     decoration: BoxDecoration(
                       color: cardPreview,
-                      borderRadius: BorderRadius.circular(2),
+                      borderRadius: BorderRadius.circular(1),
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Container(
-                    width: 12,
-                    height: 4,
+                    width: 10,
+                    height: 3,
                     decoration: BoxDecoration(
                       color: accentPreview,
                       borderRadius: BorderRadius.circular(1),
@@ -1103,7 +1022,7 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ],
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1112,16 +1031,16 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
                   Text(
                     title,
                     style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                      color: isSelected ? _draftSettings.accentColor.color : AppColors.text,
+                      fontSize: 11,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      color: isSelected ? AppColors.text : AppColors.textSecondary,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     subtitle,
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 9,
                       color: AppColors.textMuted,
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -1130,7 +1049,7 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             if (isSelected)
-              Icon(Icons.check_circle_rounded, color: _draftSettings.accentColor.color, size: 16),
+              Icon(Icons.check_circle_rounded, color: AppColors.text, size: 14),
           ],
         ),
       ),
@@ -1144,7 +1063,7 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
       ),
       padding: const EdgeInsets.all(16),
@@ -1153,69 +1072,41 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceElevated,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(Icons.sports_esports_rounded, size: 18, color: AppColors.amber),
-              ),
-              const SizedBox(width: 10),
+              Icon(Icons.sports_esports_rounded, size: 18, color: AppColors.textSecondary),
+              const SizedBox(width: 8),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'PRACTICE & DRILLS',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.8,
-                        color: AppColors.amber,
-                      ),
-                    ),
-                    Text(
-                      'Flashcard controls and challenge sizes',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'PRACTICE & DRILLS',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.8,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Divider(color: AppColors.border, height: 1),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
           // Touch Keyboard
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Touch Keyboard',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.text,
-                    ),
-                  ),
-                  Text(
-                    'Display on-screen keyboard during typing drills',
-                    style: TextStyle(fontSize: 11, color: AppColors.textMuted),
-                  ),
-                ],
+              Text(
+                'Touch Keyboard',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.text,
+                ),
               ),
               Switch(
                 value: _draftSettings.showTouchKeyboard,
-                activeThumbColor: AppColors.amber,
-                activeTrackColor: AppColors.amber.withValues(alpha: 0.3),
+                activeThumbColor: AppColors.text,
+                activeTrackColor: AppColors.text.withValues(alpha: 0.3),
                 onChanged: (val) {
                   _updateDraft(_draftSettings.copyWith(showTouchKeyboard: val));
                   AudioService.playClick(_draftSettings.soundEnabled, haptic: _draftSettings.hapticEnabled);
@@ -1224,14 +1115,14 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
           // Sprint Deck Size
           Text(
             'Default Sprint Challenge Size',
             style: TextStyle(
               fontSize: 13,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w500,
               color: AppColors.text,
             ),
           ),
@@ -1252,12 +1143,10 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppColors.amber.withValues(alpha: 0.2)
-                            : AppColors.surfaceElevated,
+                        color: isSelected ? AppColors.surfaceElevated : Colors.transparent,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: isSelected ? AppColors.amber : AppColors.border,
+                          color: isSelected ? AppColors.text : AppColors.border,
                           width: isSelected ? 1.5 : 1,
                         ),
                       ),
@@ -1267,7 +1156,7 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected ? AppColors.amber : AppColors.textSecondary,
+                          color: isSelected ? AppColors.text : AppColors.textSecondary,
                         ),
                       ),
                     ),
@@ -1288,7 +1177,7 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
       ),
       padding: const EdgeInsets.all(16),
@@ -1297,43 +1186,24 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceElevated,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(Icons.info_outline_rounded, size: 18, color: AppColors.rose),
-              ),
-              const SizedBox(width: 10),
+              Icon(Icons.info_outline_rounded, size: 18, color: AppColors.textSecondary),
+              const SizedBox(width: 8),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'APPLICATION & ABOUT',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.8,
-                        color: AppColors.rose,
-                      ),
-                    ),
-                    Text(
-                      'Version info, licenses, and architecture',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'APPLICATION & ABOUT',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.8,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Divider(color: AppColors.border, height: 1),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
           // Primary Navigation Tile to AboutScreen
           InkWell(
@@ -1347,29 +1217,29 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               );
             },
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(10),
             child: Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: AppColors.surfaceElevated,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.borderLight),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.border),
               ),
               child: Row(
                 children: [
                   Container(
-                    width: 44,
-                    height: 44,
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
                       color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.rose.withValues(alpha: 0.4)),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.borderLight),
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       'あ',
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: AppColors.text,
                       ),
@@ -1383,12 +1253,11 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
                         Text(
                           'About BunBunGo',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 13,
                             fontWeight: FontWeight.bold,
                             color: AppColors.text,
                           ),
                         ),
-                        const SizedBox(height: 2),
                         Text(
                           'v$_appVersion · Build $_buildNumber',
                           style: TextStyle(
@@ -1399,12 +1268,12 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ],
                     ),
                   ),
-                  Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary, size: 22),
+                  Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary, size: 20),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
 
           // Open Source Licenses Tile
           InkWell(
@@ -1415,29 +1284,29 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
                 applicationVersion: 'v$_appVersion · Build $_buildNumber',
               );
             },
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(10),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: AppColors.surfaceElevated,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: AppColors.border),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.shield_outlined, color: AppColors.sky, size: 18),
+                  Icon(Icons.shield_outlined, color: AppColors.textSecondary, size: 16),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'Open Source Licenses',
                       style: TextStyle(
                         fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w500,
                         color: AppColors.text,
                       ),
                     ),
                   ),
-                  Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 18),
+                  Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 16),
                 ],
               ),
             ),
@@ -1452,47 +1321,32 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
   // ==========================================
   Widget _buildSaveSection() {
     final hasChanges = _hasChanges;
-    final accent = _draftSettings.accentColor.color;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 240),
-      curve: Curves.easeOutCubic,
+    return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: hasChanges ? accent : AppColors.border,
-          width: hasChanges ? 1.5 : 1.0,
+          color: hasChanges ? AppColors.text : AppColors.border,
+          width: 1.0,
         ),
-        boxShadow: hasChanges
-            ? [
-                BoxShadow(
-                  color: accent.withValues(alpha: 0.18),
-                  blurRadius: 14,
-                  offset: const Offset(0, 3),
-                ),
-              ]
-            : [],
       ),
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 240),
+              Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: hasChanges
-                      ? accent.withValues(alpha: 0.15)
-                      : AppColors.surfaceElevated,
-                  borderRadius: BorderRadius.circular(10),
+                  color: AppColors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   hasChanges ? Icons.pending_actions_rounded : Icons.check_circle_outline_rounded,
-                  size: 20,
-                  color: hasChanges ? accent : AppColors.textSecondary,
+                  size: 18,
+                  color: hasChanges ? AppColors.text : AppColors.textSecondary,
                 ),
               ),
               const SizedBox(width: 12),
@@ -1506,14 +1360,14 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.8,
-                        color: hasChanges ? accent : AppColors.textSecondary,
+                        color: hasChanges ? AppColors.text : AppColors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       hasChanges
                           ? 'Click below to apply and save your changes.'
-                          : 'All audio, voice, and theme options are applied.',
+                          : 'All preferences are applied.',
                       style: TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary,
@@ -1524,46 +1378,39 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          GlowPulseWidget(
-            glowColor: accent,
-            animate: hasChanges,
-            minScale: 1.0,
-            maxScale: 1.015,
-            duration: const Duration(milliseconds: 1400),
-            child: BouncingWidget(
-              scaleFactor: 0.96,
-              onTap: _saveConfiguration,
-              child: ElevatedButton(
-                onPressed: _saveConfiguration,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: hasChanges ? accent : AppColors.text,
-                  foregroundColor: hasChanges ? Colors.black : AppColors.background,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+          const SizedBox(height: 14),
+          BouncingWidget(
+            scaleFactor: 0.97,
+            onTap: _saveConfiguration,
+            child: ElevatedButton(
+              onPressed: _saveConfiguration,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: hasChanges ? AppColors.text : AppColors.surfaceElevated,
+                foregroundColor: hasChanges ? AppColors.background : AppColors.textSecondary,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: 0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.save_rounded,
+                    size: 16,
+                    color: hasChanges ? AppColors.background : AppColors.textSecondary,
                   ),
-                  elevation: hasChanges ? 3 : 0,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.save_rounded,
-                      size: 18,
-                      color: hasChanges ? Colors.black : AppColors.background,
+                  const SizedBox(width: 8),
+                  Text(
+                    'Save Configuration',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: hasChanges ? AppColors.background : AppColors.textSecondary,
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Save Configuration',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: hasChanges ? Colors.black : AppColors.background,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),

@@ -9,7 +9,7 @@ class AppColors {
     _activeMode = mode;
     if (mode == AppThemeMode.system) {
       _isLight = !isPlatformDark;
-    } else if (mode == AppThemeMode.light) {
+    } else if (mode == AppThemeMode.light || mode == AppThemeMode.lightMinimal) {
       _isLight = true;
     } else {
       _isLight = false;
@@ -19,66 +19,103 @@ class AppColors {
   static AppThemeMode get activeMode => _activeMode;
   static bool get isLight => _isLight;
   static bool get isOled => _activeMode == AppThemeMode.oled;
+  static bool get isMinimal =>
+      _activeMode == AppThemeMode.lightMinimal || _activeMode == AppThemeMode.darkMinimal;
 
   // Background
   static Color get background {
+    if (_activeMode == AppThemeMode.lightMinimal) return const Color(0xFFFFFFFF);
     if (_isLight) return const Color(0xFFF4F4F6); // clean slate light
-    if (_activeMode == AppThemeMode.oled) return const Color(0xFF000000); // pure pitch black
+    if (_activeMode == AppThemeMode.oled || _activeMode == AppThemeMode.darkMinimal) return const Color(0xFF000000); // pure pitch black
     return const Color(0xFF09090B); // zinc-950
   }
 
   // Surface
   static Color get surface {
+    if (_activeMode == AppThemeMode.lightMinimal) return const Color(0xFFF8F8FA);
     if (_isLight) return const Color(0xFFFFFFFF); // pure card white
-    if (_activeMode == AppThemeMode.oled) return const Color(0xFF0C0C0E);
+    if (_activeMode == AppThemeMode.oled || _activeMode == AppThemeMode.darkMinimal) return const Color(0xFF0C0C0E);
     return const Color(0xFF18181B); // zinc-900
   }
 
   // Surface Elevated
   static Color get surfaceElevated {
+    if (_activeMode == AppThemeMode.lightMinimal) return const Color(0xFFEDEDF0);
     if (_isLight) return const Color(0xFFE4E4E7); // zinc-200
-    if (_activeMode == AppThemeMode.oled) return const Color(0xFF16161B);
+    if (_activeMode == AppThemeMode.oled || _activeMode == AppThemeMode.darkMinimal) return const Color(0xFF16161B);
     return const Color(0xFF27272A); // zinc-800
   }
 
   // Border
   static Color get border {
+    if (_activeMode == AppThemeMode.lightMinimal) return const Color(0xFFE2E2E6);
     if (_isLight) return const Color(0xFFE4E4E7); // zinc-200
-    if (_activeMode == AppThemeMode.oled) return const Color(0xFF1F1F26);
+    if (_activeMode == AppThemeMode.oled || _activeMode == AppThemeMode.darkMinimal) return const Color(0xFF1F1F26);
     return const Color(0xFF27272A); // zinc-800
   }
 
   // Border Light
   static Color get borderLight {
+    if (_activeMode == AppThemeMode.lightMinimal) return const Color(0xFFEDEDF0);
     if (_isLight) return const Color(0xFFD4D4D8); // zinc-300
-    if (_activeMode == AppThemeMode.oled) return const Color(0xFF2D2D37);
+    if (_activeMode == AppThemeMode.oled || _activeMode == AppThemeMode.darkMinimal) return const Color(0xFF2D2D37);
     return const Color(0xFF3F3F46); // zinc-700
   }
 
   // Text
   static Color get text {
+    if (_activeMode == AppThemeMode.lightMinimal) return const Color(0xFF000000); // pure black
     if (_isLight) return const Color(0xFF09090B); // zinc-950 deep readable
+    if (_activeMode == AppThemeMode.darkMinimal) return const Color(0xFFFFFFFF); // pure white
     return const Color(0xFFF4F4F5); // zinc-100
   }
 
   // Text Secondary
   static Color get textSecondary {
+    if (_activeMode == AppThemeMode.lightMinimal) return const Color(0xFF4B4B52);
+    if (_activeMode == AppThemeMode.darkMinimal) return const Color(0xFFA1A1AA);
     if (_isLight) return const Color(0xFF52525B); // zinc-600
     return const Color(0xFFA1A1AA); // zinc-400
   }
 
   // Text Muted
   static Color get textMuted {
+    if (_activeMode == AppThemeMode.lightMinimal) return const Color(0xFF71717A);
+    if (_activeMode == AppThemeMode.darkMinimal) return const Color(0xFF71717A);
     if (_isLight) return const Color(0xFF71717A); // zinc-500
     return const Color(0xFF71717A); // zinc-500
   }
 
   // Accent Colors
-  static Color get emerald => _isLight ? const Color(0xFF059669) : const Color(0xFF34D399);
-  static Color get amber => _isLight ? const Color(0xFFD97706) : const Color(0xFFFBBF24);
-  static Color get purple => _isLight ? const Color(0xFF9333EA) : const Color(0xFFA855F7);
-  static Color get rose => _isLight ? const Color(0xFFE11D48) : const Color(0xFFFB7185);
-  static Color get sky => _isLight ? const Color(0xFF0284C7) : const Color(0xFF38BDF8);
+  static Color get emerald {
+    if (_activeMode == AppThemeMode.darkMinimal) return const Color(0xFFFFFFFF);
+    if (_activeMode == AppThemeMode.lightMinimal) return const Color(0xFF000000);
+    return _isLight ? const Color(0xFF059669) : const Color(0xFF34D399);
+  }
+
+  static Color get amber {
+    if (_activeMode == AppThemeMode.darkMinimal) return const Color(0xFFFFFFFF);
+    if (_activeMode == AppThemeMode.lightMinimal) return const Color(0xFF000000);
+    return _isLight ? const Color(0xFFD97706) : const Color(0xFFFBBF24);
+  }
+
+  static Color get purple {
+    if (_activeMode == AppThemeMode.darkMinimal) return const Color(0xFFFFFFFF);
+    if (_activeMode == AppThemeMode.lightMinimal) return const Color(0xFF000000);
+    return _isLight ? const Color(0xFF9333EA) : const Color(0xFFA855F7);
+  }
+
+  static Color get rose {
+    if (_activeMode == AppThemeMode.darkMinimal) return const Color(0xFFFFFFFF);
+    if (_activeMode == AppThemeMode.lightMinimal) return const Color(0xFF000000);
+    return _isLight ? const Color(0xFFE11D48) : const Color(0xFFFB7185);
+  }
+
+  static Color get sky {
+    if (_activeMode == AppThemeMode.darkMinimal) return const Color(0xFFFFFFFF);
+    if (_activeMode == AppThemeMode.lightMinimal) return const Color(0xFF000000);
+    return _isLight ? const Color(0xFF0284C7) : const Color(0xFF38BDF8);
+  }
 
   // Baseline Dark Palette for Static Fallbacks
   static const Color darkBackground = Color(0xFF09090B);
@@ -144,6 +181,24 @@ class AppTheme {
           border: const Color(0xFFE4E4E7),
           text: const Color(0xFF09090B),
           primary: primary,
+        );
+      case AppThemeMode.darkMinimal:
+        return _createTheme(
+          brightness: Brightness.dark,
+          background: const Color(0xFF000000),
+          surface: const Color(0xFF0C0C0E),
+          border: const Color(0xFF1F1F26),
+          text: Colors.white,
+          primary: Colors.white,
+        );
+      case AppThemeMode.lightMinimal:
+        return _createTheme(
+          brightness: Brightness.light,
+          background: const Color(0xFFFFFFFF),
+          surface: const Color(0xFFF8F8FA),
+          border: const Color(0xFFE2E2E6),
+          text: Colors.black,
+          primary: Colors.black,
         );
     }
   }

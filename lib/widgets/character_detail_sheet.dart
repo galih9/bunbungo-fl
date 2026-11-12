@@ -9,12 +9,14 @@ import 'animation_effects.dart';
 class CharacterDetailSheet extends StatelessWidget {
   final KanaItem item;
   final CharacterMastery? stats;
+  final KanaScript script;
   final VoidCallback? onPracticeCharacter;
 
   const CharacterDetailSheet({
     super.key,
     required this.item,
     this.stats,
+    this.script = KanaScript.hiragana,
     this.onPracticeCharacter,
   });
 
@@ -24,6 +26,8 @@ class CharacterDetailSheet extends StatelessWidget {
     final accuracy = getCharacterAccuracy(stats);
     final avgMs = getCharacterAverageResponseMilliseconds(stats);
     final confusions = getTopConfusedRomaji(stats);
+    final displayCharacter = item.getCharacter(script);
+    final scriptName = script == KanaScript.hiragana ? 'Hiragana' : 'Katakana';
 
     Color tierColor;
     switch (tier) {
@@ -69,43 +73,28 @@ class CharacterDetailSheet extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // Main Header: Dual Glyphs
+          // Main Header: Single Script Glyph with auto-scaling FittedBox
           Row(
             children: [
               Container(
-                width: 72,
-                height: 72,
+                width: 84,
+                height: 84,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
                 decoration: BoxDecoration(
                   color: AppColors.background,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.border),
                 ),
                 alignment: Alignment.center,
-                child: Text(
-                  item.hiragana,
-                  style: TextStyle(
-                    fontSize: 40,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.text,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  item.katakana,
-                  style: TextStyle(
-                    fontSize: 40,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.text,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    displayCharacter,
+                    style: TextStyle(
+                      fontSize: 42,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.text,
+                    ),
                   ),
                 ),
               ),
@@ -147,17 +136,18 @@ class CharacterDetailSheet extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Alt: ${item.acceptedRomaji.join(", ")}',
+                      '$scriptName · ${item.category.shortLabel}',
                       style: TextStyle(
                         fontSize: 11,
+                        fontWeight: FontWeight.w600,
                         color: AppColors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      item.category.label,
+                      'Alt: ${item.acceptedRomaji.join(", ")}',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 10,
                         color: AppColors.textMuted,
                       ),
                     ),

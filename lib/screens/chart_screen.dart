@@ -10,6 +10,26 @@ import '../theme/app_theme.dart';
 import '../widgets/animation_effects.dart';
 import '../widgets/character_detail_sheet.dart';
 
+enum KanaStatusFilter {
+  all,
+  unlocked,
+  perfect,
+  weak;
+
+  String get label {
+    switch (this) {
+      case KanaStatusFilter.all:
+        return 'All Status';
+      case KanaStatusFilter.unlocked:
+        return 'Unlocked';
+      case KanaStatusFilter.perfect:
+        return 'Perfect (100%)';
+      case KanaStatusFilter.weak:
+        return 'Weak';
+    }
+  }
+}
+
 class ChartScreen extends ConsumerStatefulWidget {
   final PersistenceService persistence;
   final VoidCallback onDataChanged;
@@ -29,6 +49,7 @@ class ChartScreen extends ConsumerStatefulWidget {
 class ChartScreenState extends ConsumerState<ChartScreen> {
   KanaScript _script = KanaScript.hiragana;
   KanaCategory? _selectedCategory; // null = all
+  KanaStatusFilter _statusFilter = KanaStatusFilter.all;
   String _searchQuery = '';
   late Map<String, CharacterMastery> _masteryMap;
 
@@ -42,10 +63,42 @@ class ChartScreenState extends ConsumerState<ChartScreen> {
     ref.read(characterMasteryProvider.notifier).reload();
   }
 
+  static Color getChartDotColor(LetterPerformanceTier tier) {
+    // Exception for minimalistic themes: preserve distinct semantic indicator colors
+    final isDark = !AppColors.isLight;
+    switch (tier) {
+      case LetterPerformanceTier.strong:
+        return isDark ? const Color(0xFF34D399) : const Color(0xFF059669);
+      case LetterPerformanceTier.learning:
+        return isDark ? const Color(0xFFFBBF24) : const Color(0xFFD97706);
+      case LetterPerformanceTier.weak:
+        return isDark ? const Color(0xFFFB7185) : const Color(0xFFE11D48);
+      case LetterPerformanceTier.unseen:
+        return isDark ? const Color(0xFF3F3F46) : const Color(0xFFD4D4D8);
+    }
+  }
+
   List<KanaItem> get _filteredKana {
+    final progression = ref.read(userProgressionProvider);
     return kanaItems.where((item) {
       if (_selectedCategory != null && item.category != _selectedCategory) {
         return false;
+      }
+      final stats = _masteryMap[item.id];
+      if (_statusFilter == KanaStatusFilter.unlocked) {
+        final isUnlocked = progression.unlockAllRows ||
+            progression.unlockedRowIds.contains(item.rowId) ||
+            (stats != null && stats.attempts > 0);
+        if (!isUnlocked) return false;
+      } else if (_statusFilter == KanaStatusFilter.perfect) {
+        final isPerfect =
+            stats != null && stats.attempts > 0 && stats.correct == stats.attempts;
+        if (!isPerfect) return false;
+      } else if (_statusFilter == KanaStatusFilter.weak) {
+        final tier = getCharacterPerformanceTier(stats);
+        final isWeak = tier == LetterPerformanceTier.weak ||
+            (stats != null && stats.attempts > 0 && stats.correct < stats.attempts);
+        if (!isWeak) return false;
       }
       if (_searchQuery.trim().isNotEmpty) {
         final query = _searchQuery.trim().toLowerCase();
@@ -78,27 +131,14 @@ class ChartScreenState extends ConsumerState<ChartScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'SYLLABARY MATRIX',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.1,
-                      color: AppColors.amber,
-                    ),
-                  ),
-                  Text(
-                    'Kana Reference Chart',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.text,
-                    ),
-                  ),
-                ],
+              Text(
+                'SYLLABARY MATRIX',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.1,
+                  color: AppColors.textSecondary,
+                ),
               ),
 
               // Script Switcher
@@ -146,7 +186,7 @@ class ChartScreenState extends ConsumerState<ChartScreen> {
             },
             style: TextStyle(fontSize: 13, color: AppColors.text),
             decoration: InputDecoration(
-              hintText: 'Search by romaji (e.g. "ka", "shi") or kana...',
+              hintText: 'Search kana or romaji...',
               hintStyle: TextStyle(fontSize: 12, color: AppColors.textMuted),
               prefixIcon: Icon(Icons.search, size: 18, color: AppColors.textSecondary),
               filled: true,
@@ -217,69 +257,125 @@ class ChartScreenState extends ConsumerState<ChartScreen> {
             ),
           ),
 
+          const SizedBox(height: 6),
+
+          // Status Filters (Unlocked, Perfect, Weak)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _StatusFilterChip(
+                  label: 'All Status',
+                  isSelected: _statusFilter == KanaStatusFilter.all,
+                  onTap: () {
+                    setState(() {
+                      _statusFilter = KanaStatusFilter.all;
+                    });
+                  },
+                ),
+                const SizedBox(width: 6),
+                _StatusFilterChip(
+                  label: 'Unlocked Only',
+                  icon: Icons.lock_open_rounded,
+                  isSelected: _statusFilter == KanaStatusFilter.unlocked,
+                  onTap: () {
+                    setState(() {
+                      _statusFilter = KanaStatusFilter.unlocked;
+                    });
+                  },
+                ),
+                const SizedBox(width: 6),
+                _StatusFilterChip(
+                  label: 'Perfect Only',
+                  icon: Icons.stars_rounded,
+                  isSelected: _statusFilter == KanaStatusFilter.perfect,
+                  onTap: () {
+                    setState(() {
+                      _statusFilter = KanaStatusFilter.perfect;
+                    });
+                  },
+                ),
+                const SizedBox(width: 6),
+                _StatusFilterChip(
+                  label: 'Weak Only',
+                  icon: Icons.priority_high_rounded,
+                  isSelected: _statusFilter == KanaStatusFilter.weak,
+                  onTap: () {
+                    setState(() {
+                      _statusFilter = KanaStatusFilter.weak;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+
           const SizedBox(height: 12),
 
-          // Status Dot Legend
+          // Status Dot Legend (Uses semantic colors even in minimal themes)
           Row(
             children: [
-              _buildLegendDot(AppColors.emerald, 'Strong'),
+              _buildLegendDot(getChartDotColor(LetterPerformanceTier.strong), 'Strong'),
               const SizedBox(width: 12),
-              _buildLegendDot(AppColors.amber, 'Learning'),
+              _buildLegendDot(getChartDotColor(LetterPerformanceTier.learning), 'Learning'),
               const SizedBox(width: 12),
-              _buildLegendDot(AppColors.rose, 'Weak'),
+              _buildLegendDot(getChartDotColor(LetterPerformanceTier.weak), 'Weak'),
               const SizedBox(width: 12),
-              _buildLegendDot(AppColors.textMuted, 'Unseen'),
+              _buildLegendDot(getChartDotColor(LetterPerformanceTier.unseen), 'Unseen'),
             ],
           ),
 
           const SizedBox(height: 10),
 
-          // Kana Grid
-          Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.only(bottom: 24),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 5,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-                childAspectRatio: 0.85,
+          // Kana Grid or Empty State
+          if (filtered.isEmpty)
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.filter_list_off_rounded, size: 36, color: AppColors.textMuted),
+                    const SizedBox(height: 8),
+                    Text(
+                      'No kana matching current filters',
+                      style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
               ),
-              itemCount: filtered.length,
-              itemBuilder: (context, index) {
-                final item = filtered[index];
-                final stats = _masteryMap[item.id];
-                final tier = getCharacterPerformanceTier(stats);
+            )
+          else
+            Expanded(
+              child: GridView.builder(
+                padding: const EdgeInsets.only(bottom: 24),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 5,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: 0.85,
+                ),
+                itemCount: filtered.length,
+                itemBuilder: (context, index) {
+                  final item = filtered[index];
+                  final stats = _masteryMap[item.id];
+                  final tier = getCharacterPerformanceTier(stats);
+                  final dotColor = getChartDotColor(tier);
 
-                Color dotColor;
-                switch (tier) {
-                  case LetterPerformanceTier.strong:
-                    dotColor = AppColors.emerald;
-                    break;
-                  case LetterPerformanceTier.learning:
-                    dotColor = AppColors.amber;
-                    break;
-                  case LetterPerformanceTier.weak:
-                    dotColor = AppColors.rose;
-                    break;
-                  case LetterPerformanceTier.unseen:
-                    dotColor = AppColors.borderLight;
-                    break;
-                }
-
-                return BouncingWidget(
-                  scaleFactor: 0.92,
-                  onTap: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (_) => CharacterDetailSheet(
-                        item: item,
-                        stats: stats,
-                        onPracticeCharacter: () => widget.onNavigateTab(0),
-                      ),
-                    );
-                  },
+                  return BouncingWidget(
+                    scaleFactor: 0.92,
+                    onTap: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => CharacterDetailSheet(
+                          item: item,
+                          stats: stats,
+                          script: _script,
+                          onPracticeCharacter: () => widget.onNavigateTab(0),
+                        ),
+                      );
+                    },
                   child: Container(
                     decoration: BoxDecoration(
                       color: AppColors.surface,
@@ -425,6 +521,60 @@ class _CategoryChip extends StatelessWidget {
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
             color: isSelected ? AppColors.text : AppColors.textSecondary,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusFilterChip extends StatelessWidget {
+  final String label;
+  final IconData? icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _StatusFilterChip({
+    required this.label,
+    this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BouncingWidget(
+      scaleFactor: 0.94,
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.surfaceElevated : AppColors.surface,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? AppColors.borderLight : AppColors.border,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(
+                icon,
+                size: 13,
+                color: isSelected ? AppColors.text : AppColors.textMuted,
+              ),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? AppColors.text : AppColors.textSecondary,
+              ),
+            ),
+          ],
         ),
       ),
     );
