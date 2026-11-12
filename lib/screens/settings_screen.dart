@@ -1338,7 +1338,12 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
           InkWell(
             onTap: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const AboutScreen()),
+                MaterialPageRoute(
+                  builder: (_) => AboutScreen(
+                    persistence: widget.persistence,
+                    onDataChanged: widget.onDataChanged,
+                  ),
+                ),
               );
             },
             borderRadius: BorderRadius.circular(14),

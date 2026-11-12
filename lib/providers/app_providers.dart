@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import '../data/achievements_data.dart';
 import '../logic/arena_store.dart';
 import '../logic/dashboard_analytics.dart';
 import '../logic/mastery_analytics.dart';
@@ -113,6 +114,44 @@ class UserProgressionNotifier extends StateNotifier<UserProgression> {
     updateProgression(updated);
   }
 
+  void setUnlockAllRows(bool value) {
+    final updated = state.copyWith(unlockAllRows: value);
+    updateProgression(updated);
+  }
+
+  void unlockAllAchievements() {
+    final nowIso = DateTime.now().toIso8601String();
+    final allMap = <String, String>{};
+    int bonusXp = 0;
+    for (final def in achievementDefinitions) {
+      allMap[def.id] = nowIso;
+      bonusXp += def.xpReward;
+    }
+    final newXp = state.xp + bonusXp;
+    final updated = state.copyWith(
+      xp: newXp,
+      level: calculateLevelFromXp(newXp),
+      unlockedAchievements: allMap,
+    );
+    updateProgression(updated);
+  }
+
+  void resetAchievements() {
+    final updated = state.copyWith(
+      unlockedAchievements: const {},
+    );
+    updateProgression(updated);
+  }
+
+  void boostLevelAndXp({int addXp = 1000}) {
+    final newXp = state.xp + addXp;
+    final updated = state.copyWith(
+      xp: newXp,
+      level: calculateLevelFromXp(newXp),
+    );
+    updateProgression(updated);
+  }
+
   void reset() {
     final initial = const UserProgression();
     updateProgression(initial);
@@ -220,3 +259,7 @@ final dashboardSummaryProvider = Provider<DashboardSummary>((ref) {
 final arenaStoreProvider = Provider<ArenaStore>((ref) {
   return ArenaStore();
 });
+
+// Practice Session Active State (hides bottom nav during active practice)
+final isPracticingSessionProvider = StateProvider<bool>((ref) => false);
+

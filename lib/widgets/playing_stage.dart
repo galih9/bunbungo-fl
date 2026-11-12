@@ -151,7 +151,7 @@ class PlayingStage extends StatelessWidget {
             child: Container(
               width: double.infinity,
               constraints: const BoxConstraints(maxWidth: 420),
-              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(24),
@@ -174,9 +174,11 @@ class PlayingStage extends StatelessWidget {
                       ]
                     : [],
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
                   // Badges: Script & Redemption
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -326,6 +328,7 @@ class PlayingStage extends StatelessWidget {
               ),
             ),
           ),
+        ),
         ),
 
         const SizedBox(height: 16),

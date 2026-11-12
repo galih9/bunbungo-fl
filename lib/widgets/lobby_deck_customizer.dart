@@ -13,7 +13,7 @@ class LobbyDeckCustomizer extends StatelessWidget {
   final ValueChanged<StoredGameSettings> onUpdateSettings;
   final ValueChanged<String> onToggleRow;
   final ValueChanged<RowPreset> onSelectPreset;
-  final VoidCallback onToggleUnlockAll;
+  final VoidCallback? onToggleUnlockAll;
 
   const LobbyDeckCustomizer({
     super.key,
@@ -23,7 +23,7 @@ class LobbyDeckCustomizer extends StatelessWidget {
     required this.onUpdateSettings,
     required this.onToggleRow,
     required this.onSelectPreset,
-    required this.onToggleUnlockAll,
+    this.onToggleUnlockAll,
   });
 
   @override
@@ -174,22 +174,6 @@ class LobbyDeckCustomizer extends StatelessWidget {
                 letterSpacing: 1.1,
                 color: AppColors.textMuted,
               ),
-            ),
-            Row(
-              children: [
-                Text(
-                  'Unlock All',
-                  style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                ),
-                Transform.scale(
-                  scale: 0.7,
-                  child: Switch(
-                    value: progression.unlockAllRows,
-                    onChanged: (_) => onToggleUnlockAll(),
-                    activeThumbColor: AppColors.emerald,
-                  ),
-                ),
-              ],
             ),
           ],
         ),

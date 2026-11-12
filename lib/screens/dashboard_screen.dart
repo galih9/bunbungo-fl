@@ -7,9 +7,9 @@ import '../models/game_settings.dart';
 import '../models/user_progression.dart';
 import '../providers/app_providers.dart';
 import '../services/persistence_service.dart';
-import '../services/sample_data_seeder.dart';
 import '../theme/app_theme.dart';
 import '../widgets/character_detail_sheet.dart';
+import '../widgets/dashboard_charts.dart';
 import '../widgets/lobby_progression_banner.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -46,61 +46,6 @@ class DashboardScreenState extends ConsumerState<DashboardScreen> {
     ref.read(userProgressionProvider.notifier).reload();
     ref.read(characterMasteryProvider.notifier).reload();
     ref.read(highScoresProvider.notifier).reload();
-  }
-
-  void _seedDemoData() {
-    final seeded = SampleDataSeeder.seed(widget.persistence);
-    ref.read(characterMasteryProvider.notifier).setMasteryMap(seeded.masteryMap);
-    ref.read(userProgressionProvider.notifier).updateProgression(seeded.progression);
-    ref.read(highScoresProvider.notifier).setHighScores(seeded.highScores);
-    widget.onDataChanged();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Demo telemetry seeded successfully! Explore charts & stats.'),
-        backgroundColor: AppColors.emerald,
-      ),
-    );
-  }
-
-  void _resetProgress() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: Text('Reset All Progress?', style: TextStyle(color: AppColors.text)),
-        content: Text(
-          'This will permanently clear all mastery data, unlocked rows, streaks, and local high scores.',
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              widget.persistence.clearAllProgress();
-              ref.read(characterMasteryProvider.notifier).clear();
-              ref.read(userProgressionProvider.notifier).reset();
-              ref.read(highScoresProvider.notifier).clear();
-              widget.onDataChanged();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('All progress has been reset.'),
-                  backgroundColor: AppColors.rose,
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.rose,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Reset'),
-          ),
-        ],
-      ),
-    );
   }
 
   void _handleRecommendation(StudyRecommendation rec) {
@@ -179,6 +124,22 @@ class DashboardScreenState extends ConsumerState<DashboardScreen> {
 
           const SizedBox(height: 16),
 
+          // Duolingo-style Daily Practice Activity Chart
+          DuolingoDailyActivityChart(
+            dailyActivity: summary.dailyActivity,
+            streakDays: _progression.currentDailyStreak,
+            dailyGoal: 20,
+          ),
+
+          const SizedBox(height: 16),
+
+          // Speed & Reflex Performance Chart
+          RecallSpeedPerformanceChart(
+            speedPoints: summary.speedPerformance,
+          ),
+
+          const SizedBox(height: 16),
+
           // Character Spotlight (Weakest & Strongest)
           _buildCharacterSpotlight(summary),
 
@@ -210,42 +171,7 @@ class DashboardScreenState extends ConsumerState<DashboardScreen> {
             const SizedBox(height: 16),
           ],
 
-          // Seeder & Reset Buttons
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _seedDemoData,
-                  icon: const Icon(Icons.science_outlined, size: 16),
-                  label: const Text('Seed Demo Telemetry'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.sky,
-                    side: BorderSide(color: AppColors.sky.withValues(alpha: 0.5)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton.icon(
-                onPressed: _resetProgress,
-                icon: const Icon(Icons.delete_outline, size: 16),
-                label: const Text('Reset'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.rose,
-                  side: BorderSide(color: AppColors.rose.withValues(alpha: 0.5)),
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
         ],
       ),
     );

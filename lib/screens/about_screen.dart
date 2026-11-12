@@ -1,11 +1,27 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../data/achievements_data.dart';
+import '../logic/progression_engine.dart';
+import '../models/user_progression.dart';
+import '../providers/app_providers.dart';
+import '../services/persistence_service.dart';
+import '../services/sample_data_seeder.dart';
 import '../theme/app_theme.dart';
+import '../widgets/achievement_toast.dart';
 
 class AboutScreen extends StatefulWidget {
-  const AboutScreen({super.key});
+  final PersistenceService? persistence;
+  final VoidCallback? onDataChanged;
+
+  const AboutScreen({
+    super.key,
+    this.persistence,
+    this.onDataChanged,
+  });
 
   @override
   State<AboutScreen> createState() => _AboutScreenState();
@@ -14,11 +30,56 @@ class AboutScreen extends StatefulWidget {
 class _AboutScreenState extends State<AboutScreen> {
   PackageInfo? _packageInfo;
   bool _isLoading = true;
+  bool _developerMode = false;
+  PersistenceService? _persistence;
+  UserProgression _progression = const UserProgression();
 
   @override
   void initState() {
     super.initState();
     _loadPackageInfo();
+    _loadDeveloperMode();
+    _initPersistence();
+  }
+
+  Future<void> _initPersistence() async {
+    final p = widget.persistence ?? await PersistenceService.getInstance();
+    if (mounted) {
+      setState(() {
+        _persistence = p;
+        _progression = p.loadUserProgression();
+      });
+    }
+  }
+
+  void _syncRiverpod() {
+    try {
+      final container = ProviderScope.containerOf(context, listen: false);
+      container.read(userProgressionProvider.notifier).reload();
+      container.read(characterMasteryProvider.notifier).reload();
+      container.read(highScoresProvider.notifier).reload();
+    } catch (_) {}
+  }
+
+  Future<void> _loadDeveloperMode() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (mounted) {
+        setState(() {
+          _developerMode = prefs.getBool('developer_mode_enabled') ?? false;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _setDeveloperMode(bool value) async {
+    setState(() {
+      _developerMode = value;
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('developer_mode_enabled', value);
+    } catch (_) {}
   }
 
   Future<void> _loadPackageInfo() async {
@@ -145,6 +206,8 @@ BunBunGo System Info:
                   _buildArchitectureCard(),
                   const SizedBox(height: 16),
                   _buildActionsCard(),
+                  const SizedBox(height: 20),
+                  _buildDeveloperSection(),
                   const SizedBox(height: 24),
                   _buildFooter(),
                   const SizedBox(height: 24),
@@ -531,6 +594,415 @@ BunBunGo System Info:
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildDeveloperSection() {
+    final persistence = _persistence;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _developerMode
+              ? AppColors.amber.withValues(alpha: 0.6)
+              : AppColors.border,
+          width: _developerMode ? 1.5 : 1.0,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Developer Mode Master Switch
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: _developerMode
+                        ? AppColors.amber.withValues(alpha: 0.2)
+                        : AppColors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.terminal_rounded,
+                    color: _developerMode ? AppColors.amber : AppColors.textSecondary,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Developer Menu',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.text,
+                        ),
+                      ),
+                      Text(
+                        'Progression overrides, unlocks & telemetry tools',
+                        style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: _developerMode,
+                  onChanged: (val) {
+                    _setDeveloperMode(val);
+                  },
+                  activeThumbColor: AppColors.amber,
+                ),
+              ],
+            ),
+          ),
+
+          // Child List (revealed when developer mode is switched on)
+          if (_developerMode) ...[
+            Divider(color: AppColors.border, height: 1),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Section: Progression & Unlocks
+                  Text(
+                    'PROGRESSION & UNLOCKS',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.1,
+                      color: AppColors.amber,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // 1. Unlock All Kana Rows
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceElevated,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.lock_open_rounded,
+                          size: 18,
+                          color: _progression.unlockAllRows ? AppColors.emerald : AppColors.textSecondary,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Unlock All Kana Rows',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.text,
+                                ),
+                              ),
+                              Text(
+                                'All 104 characters available in practice',
+                                style: TextStyle(fontSize: 10, color: AppColors.textMuted),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Switch(
+                          value: _progression.unlockAllRows,
+                          onChanged: (val) {
+                            final next = _progression.copyWith(unlockAllRows: val);
+                            setState(() {
+                              _progression = next;
+                            });
+                            _persistence?.saveUserProgression(next);
+                            _syncRiverpod();
+                            widget.onDataChanged?.call();
+                            HapticFeedback.lightImpact();
+                          },
+                          activeThumbColor: AppColors.emerald,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // 2. Achievements Unlocks
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            final nowIso = DateTime.now().toIso8601String();
+                            final allMap = <String, String>{};
+                            int bonusXp = 0;
+                            for (final def in achievementDefinitions) {
+                              allMap[def.id] = nowIso;
+                              bonusXp += def.xpReward;
+                            }
+                            final newXp = _progression.xp + bonusXp;
+                            final next = _progression.copyWith(
+                              xp: newXp,
+                              level: calculateLevelFromXp(newXp),
+                              unlockedAchievements: allMap,
+                            );
+                            setState(() {
+                              _progression = next;
+                            });
+                            _persistence?.saveUserProgression(next);
+                            _syncRiverpod();
+                            widget.onDataChanged?.call();
+                            HapticFeedback.mediumImpact();
+                            if (achievementDefinitions.isNotEmpty) {
+                              AchievementToast.show(context, achievementDefinitions.first);
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('All achievements unlocked!'),
+                                backgroundColor: AppColors.emerald,
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.military_tech_rounded, size: 16),
+                          label: const Text('Unlock All Badges', style: TextStyle(fontSize: 11)),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.amber,
+                            side: BorderSide(color: AppColors.amber.withValues(alpha: 0.5)),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      OutlinedButton(
+                        onPressed: () {
+                          final next = _progression.copyWith(
+                            unlockedAchievements: const {},
+                          );
+                          setState(() {
+                            _progression = next;
+                          });
+                          _persistence?.saveUserProgression(next);
+                          _syncRiverpod();
+                          widget.onDataChanged?.call();
+                          HapticFeedback.lightImpact();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('Achievements reset to locked.'),
+                              backgroundColor: AppColors.textSecondary,
+                            ),
+                          );
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.textSecondary,
+                          side: BorderSide(color: AppColors.border),
+                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: const Text('Lock Badges', style: TextStyle(fontSize: 11)),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Section: Telemetry & Mock Data
+                  Text(
+                    'DATA & TELEMETRY GENERATOR',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.1,
+                      color: AppColors.sky,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Seed Demo Telemetry
+                  OutlinedButton.icon(
+                    onPressed: persistence == null
+                        ? null
+                        : () {
+                            final seeded = SampleDataSeeder.seed(persistence);
+                            setState(() {
+                              _progression = seeded.progression;
+                            });
+                            _syncRiverpod();
+                            widget.onDataChanged?.call();
+                            HapticFeedback.mediumImpact();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Row(
+                                  children: [
+                                    Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                                    SizedBox(width: 8),
+                                    Text('Demo telemetry seeded! Check dashboard charts & stats.'),
+                                  ],
+                                ),
+                                backgroundColor: AppColors.emerald,
+                              ),
+                            );
+                          },
+                    icon: const Icon(Icons.science_outlined, size: 16),
+                    label: const Text('Seed Demo Telemetry'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.sky,
+                      side: BorderSide(color: AppColors.sky.withValues(alpha: 0.6)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // Reset All Progress Button
+                  OutlinedButton.icon(
+                    onPressed: persistence == null
+                        ? null
+                        : () {
+                            _showResetConfirmationDialog(persistence);
+                          },
+                    icon: const Icon(Icons.delete_forever_rounded, size: 16),
+                    label: const Text('Reset All Data & Progress'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.rose,
+                      side: BorderSide(color: AppColors.rose.withValues(alpha: 0.6)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Section: UI Testing Utilities
+                  Text(
+                    'UI TESTING UTILITIES',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.1,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            if (achievementDefinitions.isNotEmpty) {
+                              AchievementToast.show(context, achievementDefinitions.first);
+                            }
+                            HapticFeedback.lightImpact();
+                          },
+                          icon: const Icon(Icons.notification_important_outlined, size: 16),
+                          label: const Text('Test Toast UI', style: TextStyle(fontSize: 11)),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.amber,
+                            side: BorderSide(color: AppColors.amber.withValues(alpha: 0.5)),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            final newXp = _progression.xp + 1000;
+                            final next = _progression.copyWith(
+                              xp: newXp,
+                              level: calculateLevelFromXp(newXp),
+                            );
+                            setState(() {
+                              _progression = next;
+                            });
+                            _persistence?.saveUserProgression(next);
+                            _syncRiverpod();
+                            widget.onDataChanged?.call();
+                            HapticFeedback.lightImpact();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('+1,000 XP granted!'),
+                                backgroundColor: AppColors.emerald,
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.bolt_rounded, size: 16),
+                          label: const Text('+1,000 XP', style: TextStyle(fontSize: 11)),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.emerald,
+                            side: BorderSide(color: AppColors.emerald.withValues(alpha: 0.5)),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _showResetConfirmationDialog(PersistenceService persistence) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Text('Reset All Progress?', style: TextStyle(color: AppColors.text)),
+        content: Text(
+          'This will permanently clear all mastery telemetry, unlocked rows, streaks, XP, and local high scores.',
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              persistence.clearAllProgress();
+              setState(() {
+                _progression = const UserProgression();
+              });
+              _syncRiverpod();
+              widget.onDataChanged?.call();
+              HapticFeedback.heavyImpact();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('All progress and telemetry has been reset.'),
+                  backgroundColor: AppColors.rose,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.rose,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Reset'),
+          ),
+        ],
+      ),
     );
   }
 

@@ -16,6 +16,7 @@ import '../providers/app_providers.dart';
 import '../services/audio_service.dart';
 import '../services/persistence_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/achievement_toast.dart';
 import '../widgets/lobby_deck_customizer.dart';
 import '../widgets/playing_stage.dart';
 import '../widgets/session_summary_view.dart';
@@ -55,6 +56,9 @@ class ArenaScreenState extends ConsumerState<ArenaScreen> {
     _countdownTimer?.cancel();
     _textController.dispose();
     _textFocusNode.dispose();
+    try {
+      ref.read(isPracticingSessionProvider.notifier).state = false;
+    } catch (_) {}
     super.dispose();
   }
 
@@ -132,11 +136,6 @@ class ArenaScreenState extends ConsumerState<ArenaScreen> {
     _updateSettings(settings.copyWith(selectedRows: rows));
   }
 
-  void _toggleUnlockAll() {
-    ref.read(userProgressionProvider.notifier).toggleUnlockAll();
-    widget.onDataChanged();
-  }
-
   void startSessionWithDeck(
     List<FlashcardChallenge> deck,
     StoredGameSettings settings,
@@ -145,6 +144,7 @@ class ArenaScreenState extends ConsumerState<ArenaScreen> {
     _countdownTimer?.cancel();
     _textController.clear();
 
+    ref.read(isPracticingSessionProvider.notifier).state = true;
     _store.startSession(deck);
 
     if (settings.gameMode == GameMode.timeAttack) {
@@ -344,8 +344,15 @@ class ArenaScreenState extends ConsumerState<ArenaScreen> {
 
     AudioService.playVictory(settings.soundEnabled);
 
+    ref.read(isPracticingSessionProvider.notifier).state = false;
     _store.finishSession(result);
     widget.onDataChanged();
+
+    if (result.newlyUnlockedAchievements.isNotEmpty && mounted) {
+      for (final ach in result.newlyUnlockedAchievements) {
+        AchievementToast.show(context, ach);
+      }
+    }
   }
 
   void _onVirtualKeyPress(String ch) {
@@ -393,44 +400,88 @@ class ArenaScreenState extends ConsumerState<ArenaScreen> {
         builder: (_) {
           switch (_store.phase) {
             case ArenaPhase.lobby:
-              return SingleChildScrollView(
-                padding: const EdgeInsets.only(top: 12, bottom: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    LobbyDeckCustomizer(
-                      settings: settings,
-                      progression: progression,
-                      onUpdateSettings: _updateSettings,
-                      onToggleRow: (rowId) => _toggleRow(settings, rowId),
-                      onSelectPreset: (preset) => _selectPreset(settings, preset),
-                      onToggleUnlockAll: _toggleUnlockAll,
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () {
-                        _store.setPracticeFocusMode(PracticeFocusMode.standard);
-                        startStandardSession();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.text,
-                        foregroundColor: AppColors.background,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        'Start Bun Bun Go Session (${activePool.length} Kana)',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
+              return Stack(
+                children: [
+                  Positioned.fill(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.only(top: 12, bottom: 96),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          LobbyDeckCustomizer(
+                            settings: settings,
+                            progression: progression,
+                            onUpdateSettings: _updateSettings,
+                            onToggleRow: (rowId) => _toggleRow(settings, rowId),
+                            onSelectPreset: (preset) => _selectPreset(settings, preset),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 16,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.4),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          _store.setPracticeFocusMode(PracticeFocusMode.standard);
+                          startStandardSession();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.emerald,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 4,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.play_arrow_rounded, size: 24),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Start Practice',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.22),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '${activePool.length} Kana',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               );
 
             case ArenaPhase.playing:
@@ -484,7 +535,10 @@ class ArenaScreenState extends ConsumerState<ArenaScreen> {
                     _store.setPracticeFocusMode(PracticeFocusMode.weakLetters);
                     startStandardSession();
                   },
-                  onCustomizeDeck: _store.resetToLobby,
+                  onCustomizeDeck: () {
+                    ref.read(isPracticingSessionProvider.notifier).state = false;
+                    _store.resetToLobby();
+                  },
                 ),
               );
           }

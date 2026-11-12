@@ -31,7 +31,7 @@ void main() {
     // Verify Arena screen components (clean and minimal)
     expect(find.text('SCRIPT SELECTION'), findsOneWidget);
     expect(find.text('PRACTICE ROWS'), findsOneWidget);
-    expect(find.textContaining('Start Bun Bun Go Session'), findsOneWidget);
+    expect(find.text('Start Practice'), findsOneWidget);
 
     // Verify progression banner is NOT in Arena tab
     expect(find.textContaining('XP Progress'), findsNothing);

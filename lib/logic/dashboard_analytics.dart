@@ -6,6 +6,7 @@ import '../models/high_score.dart';
 import '../models/kana_item.dart';
 import '../models/user_progression.dart';
 import 'mastery_analytics.dart';
+import 'progression_engine.dart';
 
 class ScriptPerformanceSummary {
   final KanaScript script;
@@ -138,6 +139,44 @@ class StudyRecommendation {
   });
 }
 
+class DailyActivityDataPoint {
+  final DateTime date;
+  final String dateKey;
+  final String dayName;
+  final int lettersPracticed;
+  final bool isToday;
+  final bool goalReached;
+
+  const DailyActivityDataPoint({
+    required this.date,
+    required this.dateKey,
+    required this.dayName,
+    required this.lettersPracticed,
+    required this.isToday,
+    required this.goalReached,
+  });
+}
+
+class SpeedPerformancePoint {
+  final String sessionLabel;
+  final String dateLabel;
+  final double secondsPerLetter;
+  final int cardsPerMinute;
+  final int cardsCleared;
+  final int accuracy;
+  final String modeName;
+
+  const SpeedPerformancePoint({
+    required this.sessionLabel,
+    required this.dateLabel,
+    required this.secondsPerLetter,
+    required this.cardsPerMinute,
+    required this.cardsCleared,
+    required this.accuracy,
+    required this.modeName,
+  });
+}
+
 class DashboardSummary {
   final KanaPerformanceAnalysis analysis;
   final List<ScriptPerformanceSummary> scriptSummaries;
@@ -147,6 +186,8 @@ class DashboardSummary {
   final List<ConfusionPairSummary> topConfusions;
   final List<SessionTrendPoint> sessionTrend;
   final List<StudyRecommendation> recommendations;
+  final List<DailyActivityDataPoint> dailyActivity;
+  final List<SpeedPerformancePoint> speedPerformance;
   final int overallProficiencyScore;
   final int coveragePercent;
   final int masteryPercent;
@@ -160,6 +201,8 @@ class DashboardSummary {
     required this.topConfusions,
     required this.sessionTrend,
     required this.recommendations,
+    required this.dailyActivity,
+    required this.speedPerformance,
     required this.overallProficiencyScore,
     required this.coveragePercent,
     required this.masteryPercent,
@@ -438,6 +481,76 @@ DashboardSummary buildDashboardSummary(
     );
   }
 
+  // Calculate Daily Activity (Last 7 Days - Duolingo Style)
+  final now = DateTime.now();
+  final todayKey = formatDateKey(now);
+  const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  final dailyActivity = <DailyActivityDataPoint>[];
+
+  for (int i = 6; i >= 0; i--) {
+    final dayDate = now.subtract(Duration(days: i));
+    final key = formatDateKey(dayDate);
+    final dayName = dayLabels[dayDate.weekday - 1];
+
+    int totalLetters = 0;
+    for (final score in highScores) {
+      if (score.dateIso.startsWith(key)) {
+        totalLetters += score.cardsCleared;
+      }
+    }
+
+    if (totalLetters == 0) {
+      for (final m in masteryMap.values) {
+        if (m.lastPracticedIso != null && m.lastPracticedIso!.startsWith(key)) {
+          totalLetters += (m.hiraganaAttempts + m.katakanaAttempts);
+        }
+      }
+    }
+
+    dailyActivity.add(
+      DailyActivityDataPoint(
+        date: dayDate,
+        dateKey: key,
+        dayName: dayName,
+        lettersPracticed: totalLetters,
+        isToday: key == todayKey,
+        goalReached: totalLetters >= 20,
+      ),
+    );
+  }
+
+  // Calculate Speed Performance Series (Response Time per letter across sessions)
+  final sortedHighScores = List<HighScoreRecord>.from(highScores)
+    ..sort((a, b) => a.dateIso.compareTo(b.dateIso));
+
+  final recentScores = sortedHighScores.length > 10
+      ? sortedHighScores.sublist(sortedHighScores.length - 10)
+      : sortedHighScores;
+
+  final speedPerformance = recentScores.asMap().entries.map((entry) {
+    final idx = entry.key;
+    final r = entry.value;
+    DateTime? dt;
+    try {
+      dt = DateTime.parse(r.dateIso);
+    } catch (_) {}
+    final dateLabel = dt != null ? '${dt.month}/${dt.day}' : 'S${idx + 1}';
+    final durationSeconds = max(1, r.durationSeconds);
+    final cardsCleared = max(1, r.cardsCleared);
+    final secondsPerLetter = double.parse((durationSeconds / cardsCleared).toStringAsFixed(2));
+    final cpm = (cardsCleared / (durationSeconds / 60.0)).round();
+
+    return SpeedPerformancePoint(
+      sessionLabel: 'S${idx + 1}',
+      dateLabel: dateLabel,
+      secondsPerLetter: secondsPerLetter,
+      cardsPerMinute: cpm,
+      cardsCleared: r.cardsCleared,
+      accuracy: r.accuracy,
+      modeName: r.gameMode.name,
+    );
+  }).toList();
+
   return DashboardSummary(
     analysis: analysis,
     scriptSummaries: scriptSummaries,
@@ -447,6 +560,8 @@ DashboardSummary buildDashboardSummary(
     topConfusions: topConfusions,
     sessionTrend: sessionTrend,
     recommendations: recommendations,
+    dailyActivity: dailyActivity,
+    speedPerformance: speedPerformance,
     overallProficiencyScore: overallProficiencyScore,
     coveragePercent: coveragePercent,
     masteryPercent: masteryPercent,

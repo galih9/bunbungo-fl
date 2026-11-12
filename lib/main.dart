@@ -131,6 +131,7 @@ class _MainShellState extends ConsumerState<MainShell> {
   @override
   Widget build(BuildContext context) {
     final activeTabIndex = ref.watch(activeTabProvider);
+    final isPracticing = ref.watch(isPracticingSessionProvider);
     final settings = ref.watch(gameSettingsProvider);
     final progression = ref.watch(userProgressionProvider);
     final unlockedAchievementsCount = ref.watch(unlockedAchievementsCountProvider);
@@ -196,14 +197,16 @@ class _MainShellState extends ConsumerState<MainShell> {
           ],
         ),
       ),
-      bottomNavigationBar: AppBottomNav(
-        currentIndex: activeTabIndex,
-        onTabSelected: _navigateToTab,
-        weakCount: analysis.weakItems.length,
-        masteredCount: analysis.strongItems.length,
-        totalKanaCount: kanaItems.length,
-        unlockedAchievements: unlockedAchievementsCount,
-      ),
+      bottomNavigationBar: isPracticing
+          ? null
+          : AppBottomNav(
+              currentIndex: activeTabIndex,
+              onTabSelected: _navigateToTab,
+              weakCount: analysis.weakItems.length,
+              masteredCount: analysis.strongItems.length,
+              totalKanaCount: kanaItems.length,
+              unlockedAchievements: unlockedAchievementsCount,
+            ),
     );
   }
 }
