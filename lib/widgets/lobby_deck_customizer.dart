@@ -3,6 +3,7 @@ import '../data/kana_data.dart';
 import '../models/game_settings.dart';
 import '../models/user_progression.dart';
 import '../theme/app_theme.dart';
+import 'animation_effects.dart';
 
 enum RowPreset { starter, basic, dakuten, digraph, all }
 
@@ -224,10 +225,12 @@ class LobbyDeckCustomizer extends StatelessWidget {
                 progression.unlockedRowIds.contains(group.id);
             final isSelected = settings.selectedRows.contains(group.id);
 
-            return InkWell(
+            return BouncingWidget(
+              scaleFactor: 0.97,
               onTap: isUnlocked ? () => onToggleRow(group.id) : null,
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOutCubic,
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
                   color: isSelected
@@ -236,8 +239,9 @@ class LobbyDeckCustomizer extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isSelected
-                        ? AppColors.emerald.withValues(alpha: 0.5)
+                        ? AppColors.emerald.withValues(alpha: 0.6)
                         : AppColors.border,
+                    width: isSelected ? 1.5 : 1.0,
                   ),
                 ),
                 child: Row(
@@ -299,9 +303,11 @@ class LobbyDeckCustomizer extends StatelessWidget {
                       ),
                     ),
                     if (isUnlocked)
-                      Container(
-                        width: 20,
-                        height: 20,
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeOutBack,
+                        width: 22,
+                        height: 22,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: isSelected ? AppColors.emerald : Colors.transparent,
@@ -309,6 +315,7 @@ class LobbyDeckCustomizer extends StatelessWidget {
                             color: isSelected
                                 ? AppColors.emerald
                                 : AppColors.borderLight,
+                            width: 1.5,
                           ),
                         ),
                         child: isSelected
@@ -348,18 +355,29 @@ class _PillButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return BouncingWidget(
+      scaleFactor: 0.94,
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.surfaceElevated : AppColors.surface,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected ? AppColors.borderLight : AppColors.border,
-            width: 1,
+            width: isSelected ? 1.5 : 1.0,
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : [],
         ),
         child: Text(
           label,
@@ -382,9 +400,9 @@ class _PresetButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return BouncingWidget(
+      scaleFactor: 0.92,
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(

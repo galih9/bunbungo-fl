@@ -8,6 +8,7 @@ import '../models/user_progression.dart';
 import '../providers/app_providers.dart';
 import '../services/persistence_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/animation_effects.dart';
 import '../widgets/character_detail_sheet.dart';
 import '../widgets/dashboard_charts.dart';
 import '../widgets/lobby_progression_banner.dart';
@@ -189,26 +190,37 @@ class DashboardScreenState extends ConsumerState<DashboardScreen> {
         children: [
           Row(
             children: [
-              // Circular Proficiency Score Gauge
+              // Circular Proficiency Score Gauge with animated tween
               Stack(
                 alignment: Alignment.center,
                 children: [
                   SizedBox(
                     width: 72,
                     height: 72,
-                    child: CircularProgressIndicator(
-                      value: summary.overallProficiencyScore / 100.0,
-                      strokeWidth: 6,
-                      backgroundColor: AppColors.surfaceElevated,
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(AppColors.emerald),
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween<double>(
+                        begin: 0.0,
+                        end: summary.overallProficiencyScore / 100.0,
+                      ),
+                      duration: const Duration(milliseconds: 900),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, val, _) {
+                        return CircularProgressIndicator(
+                          value: val,
+                          strokeWidth: 6,
+                          backgroundColor: AppColors.surfaceElevated,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(AppColors.emerald),
+                        );
+                      },
                     ),
                   ),
                   Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        '${summary.overallProficiencyScore}',
+                      CountUpText(
+                        targetValue: summary.overallProficiencyScore,
+                        duration: const Duration(milliseconds: 900),
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -376,7 +388,8 @@ class DashboardScreenState extends ConsumerState<DashboardScreen> {
               children: weakItems.map((item) {
                 final stats = _masteryMap[item.id];
                 final accuracy = getCharacterAccuracy(stats);
-                return InkWell(
+                return BouncingWidget(
+                  scaleFactor: 0.93,
                   onTap: () {
                     showModalBottomSheet(
                       context: context,
@@ -389,7 +402,6 @@ class DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ),
                     );
                   },
-                  borderRadius: BorderRadius.circular(8),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
@@ -452,7 +464,8 @@ class DashboardScreenState extends ConsumerState<DashboardScreen> {
               runSpacing: 8,
               children: strongItems.map((item) {
                 final stats = _masteryMap[item.id];
-                return InkWell(
+                return BouncingWidget(
+                  scaleFactor: 0.93,
                   onTap: () {
                     showModalBottomSheet(
                       context: context,
@@ -464,7 +477,6 @@ class DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ),
                     );
                   },
-                  borderRadius: BorderRadius.circular(8),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(

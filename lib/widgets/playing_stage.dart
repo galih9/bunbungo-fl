@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/challenge.dart';
 import '../models/game_settings.dart';
 import '../models/kana_item.dart';
 import '../theme/app_theme.dart';
+import 'animation_effects.dart';
 
-class PlayingStage extends StatelessWidget {
+class PlayingStage extends StatefulWidget {
   final FlashcardChallenge currentCard;
   final int currentIndex;
   final int deckLength;
@@ -45,8 +47,36 @@ class PlayingStage extends StatelessWidget {
   });
 
   @override
+  State<PlayingStage> createState() => _PlayingStageState();
+}
+
+class _PlayingStageState extends State<PlayingStage> {
+  final GlobalKey<ShakeWidgetState> _shakeKey = GlobalKey<ShakeWidgetState>();
+
+  @override
+  void didUpdateWidget(covariant PlayingStage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Trigger shake on new incorrect feedback
+    if (oldWidget.feedback == null &&
+        widget.feedback != null &&
+        !widget.feedback!.isCorrect) {
+      _shakeKey.currentState?.shake();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final comboMultiplier = (1 + (streak ~/ 5)).clamp(1, 4);
+    final comboMultiplier = (1 + (widget.streak ~/ 5)).clamp(1, 4);
+    final isTimeAttackUrgent = widget.settings.gameMode == GameMode.timeAttack &&
+        widget.remainingSeconds <= 10;
+
+    // Progress computation
+    double progressFraction = 1.0;
+    if (widget.settings.gameMode == GameMode.sprint && widget.deckLength > 0) {
+      progressFraction = ((widget.currentIndex + 1) / widget.deckLength).clamp(0.0, 1.0);
+    } else if (widget.settings.gameMode == GameMode.timeAttack) {
+      progressFraction = ((60 - widget.remainingSeconds) / 60.0).clamp(0.0, 1.0);
+    }
 
     return Column(
       children: [
@@ -54,84 +84,97 @@ class PlayingStage extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // Exit Button
-            IconButton(
-              icon: Icon(Icons.close_rounded, color: AppColors.textSecondary),
-              tooltip: 'End Run',
-              onPressed: onEndRun,
+            // Exit Button with Bouncing press
+            BouncingWidget(
+              scaleFactor: 0.88,
+              onTap: widget.onEndRun,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Icon(Icons.close_rounded, size: 18, color: AppColors.textSecondary),
+              ),
             ),
 
             // Mode Progress / Timer / Zen
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceElevated,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: settings.gameMode == GameMode.timeAttack &&
-                          remainingSeconds <= 10
-                      ? AppColors.rose
-                      : AppColors.border,
+            GlowPulseWidget(
+              glowColor: AppColors.rose,
+              animate: isTimeAttackUrgent,
+              duration: const Duration(milliseconds: 600),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isTimeAttackUrgent ? AppColors.rose : AppColors.border,
+                  ),
                 ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    settings.gameMode == GameMode.timeAttack
-                        ? Icons.timer_outlined
-                        : Icons.filter_none_rounded,
-                    size: 14,
-                    color: settings.gameMode == GameMode.timeAttack &&
-                            remainingSeconds <= 10
-                        ? AppColors.rose
-                        : AppColors.textSecondary,
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    settings.gameMode == GameMode.sprint
-                        ? '${currentIndex + 1} / $deckLength'
-                        : settings.gameMode == GameMode.timeAttack
-                            ? '${remainingSeconds}s'
-                            : 'Card ${currentIndex + 1}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: settings.gameMode == GameMode.timeAttack &&
-                              remainingSeconds <= 10
-                          ? AppColors.rose
-                          : AppColors.text,
+                child: Row(
+                  children: [
+                    Icon(
+                      widget.settings.gameMode == GameMode.timeAttack
+                          ? Icons.timer_outlined
+                          : Icons.filter_none_rounded,
+                      size: 14,
+                      color: isTimeAttackUrgent ? AppColors.rose : AppColors.textSecondary,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 5),
+                    Text(
+                      widget.settings.gameMode == GameMode.sprint
+                          ? '${widget.currentIndex + 1} / ${widget.deckLength}'
+                          : widget.settings.gameMode == GameMode.timeAttack
+                              ? '${widget.remainingSeconds}s'
+                              : 'Card ${widget.currentIndex + 1}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: isTimeAttackUrgent ? AppColors.rose : AppColors.text,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
 
-            // Score & Streak
+            // Score & Streak with Pulsing Juice
             Row(
               children: [
-                if (streak > 1) ...[
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AppColors.amber.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                          color: AppColors.amber.withValues(alpha: 0.4)),
-                    ),
-                    child: Text(
-                      '${streak}x ($comboMultiplier倍)',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.amber,
+                if (widget.streak > 1) ...[
+                  GlowPulseWidget(
+                    glowColor: AppColors.amber,
+                    animate: widget.streak >= 3,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.amber.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: AppColors.amber.withValues(alpha: 0.5)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('🔥', style: TextStyle(fontSize: 11)),
+                          const SizedBox(width: 3),
+                          Text(
+                            '${widget.streak}x ($comboMultiplier倍)',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.amber,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                   const SizedBox(width: 6),
                 ],
                 Text(
-                  '$score pts',
+                  '${widget.score} pts',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
@@ -143,211 +186,282 @@ class PlayingStage extends StatelessWidget {
           ],
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: 10),
 
-        // Main Kana Flashcard
+        // Sleek Animated Progress Bar
+        SmoothAnimatedProgressBar(
+          progress: progressFraction,
+          height: 4.5,
+          fillColor: AppColors.emerald,
+          backgroundColor: AppColors.surfaceElevated,
+        ),
+
+        const SizedBox(height: 14),
+
+        // Main Kana Flashcard with Shake & Pop
         Expanded(
           child: Center(
-            child: Container(
-              width: double.infinity,
-              constraints: const BoxConstraints(maxWidth: 420),
-              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: feedback != null
-                      ? (feedback!.isCorrect ? AppColors.emerald : AppColors.rose)
-                      : AppColors.border,
-                  width: feedback != null ? 2 : 1,
-                ),
-                boxShadow: feedback != null
-                    ? [
-                        BoxShadow(
-                          color: (feedback!.isCorrect
-                                  ? AppColors.emerald
-                                  : AppColors.rose)
-                              .withValues(alpha: 0.2),
-                          blurRadius: 20,
-                          spreadRadius: 2,
-                        ),
-                      ]
-                    : [],
-              ),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                  // Badges: Script & Redemption
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceElevated,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: Text(
-                          currentCard.script == KanaScript.hiragana
-                              ? 'HIRAGANA'
-                              : 'KATAKANA',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.1,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                      if (currentCard.isRedemption) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppColors.amber.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
-                                color: AppColors.amber.withValues(alpha: 0.4)),
-                          ),
-                          child: Text(
-                            '⚡ REDEMPTION',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1,
-                              color: AppColors.amber,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Giant Kana Character
-                  Text(
-                    currentCard.displayCharacter,
-                    style: TextStyle(
-                      fontSize: 88,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.text,
-                      height: 1.0,
+            child: ShakeWidget(
+              key: _shakeKey,
+              child: AnimatedScale(
+                scale: widget.feedback != null && widget.feedback!.isCorrect ? 1.02 : 1.0,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOutBack,
+                child: Container(
+                  width: double.infinity,
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: widget.feedback != null
+                          ? (widget.feedback!.isCorrect ? AppColors.emerald : AppColors.rose)
+                          : AppColors.border,
+                      width: widget.feedback != null ? 2.2 : 1.0,
                     ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Hint Text or Button
-                  if (showHint)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceElevated,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        currentCard.item.hint,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.amber,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    )
-                  else
-                    TextButton.icon(
-                      onPressed: onToggleHint,
-                      icon: Icon(Icons.lightbulb_outline_rounded,
-                          size: 14, color: AppColors.textMuted),
-                      label: Text(
-                        'Show Hint (-25 pts)',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                    ),
-
-                  // Feedback Outcome Message
-                  if (feedback != null) ...[
-                    const SizedBox(height: 14),
-                    if (feedback!.isCorrect)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.check_circle_rounded,
-                              size: 16, color: AppColors.emerald),
-                          const SizedBox(width: 6),
-                          Text(
-                            '+${feedback!.pointsEarned} pts',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.emerald,
+                    boxShadow: widget.feedback != null
+                        ? [
+                            BoxShadow(
+                              color: (widget.feedback!.isCorrect
+                                      ? AppColors.emerald
+                                      : AppColors.rose)
+                                  .withValues(alpha: 0.28),
+                              blurRadius: 22,
+                              spreadRadius: 3,
                             ),
-                          ),
-                          if (feedback!.speedTier != null) ...[
-                            const SizedBox(width: 6),
-                            Text(
-                              feedback!.speedTier!.label,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: AppColors.textSecondary,
-                              ),
+                          ]
+                        : [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.15),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
                             ),
                           ],
-                        ],
-                      )
-                    else
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.cancel_rounded,
-                              size: 16, color: AppColors.rose),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Answer: ${feedback!.expectedRomaji}',
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Badges: Script & Redemption
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceElevated,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: AppColors.border),
+                              ),
+                              child: Text(
+                                widget.currentCard.script == KanaScript.hiragana
+                                    ? 'HIRAGANA'
+                                    : 'KATAKANA',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.1,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                            if (widget.currentCard.isRedemption) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: AppColors.amber.withValues(alpha: 0.18),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                      color: AppColors.amber.withValues(alpha: 0.5)),
+                                ),
+                                child: Text(
+                                  '⚡ REDEMPTION',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1,
+                                    color: AppColors.amber,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Giant Kana Character with Smooth Pop Transition
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 240),
+                          transitionBuilder: (child, animation) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: ScaleTransition(
+                                scale: Tween<double>(begin: 0.86, end: 1.0).animate(
+                                  CurvedAnimation(
+                                    parent: animation,
+                                    curve: Curves.easeOutBack,
+                                  ),
+                                ),
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: Text(
+                            widget.currentCard.displayCharacter,
+                            key: ValueKey(
+                              '${widget.currentCard.item.id}_${widget.currentCard.script}',
+                            ),
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 88,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.rose,
+                              color: AppColors.text,
+                              height: 1.0,
                             ),
                           ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Hint Text or Button with tactile bounce
+                        if (widget.showHint)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceElevated,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: AppColors.amber.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Text(
+                              widget.currentCard.item.hint,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.amber,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          )
+                        else
+                          BouncingWidget(
+                            scaleFactor: 0.94,
+                            onTap: widget.onToggleHint,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.lightbulb_outline_rounded,
+                                      size: 14, color: AppColors.textMuted),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Show Hint (-25 pts)',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.textMuted,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                        // Feedback Outcome Message
+                        if (widget.feedback != null) ...[
+                          const SizedBox(height: 14),
+                          TweenAnimationBuilder<double>(
+                            tween: Tween<double>(begin: 0.0, end: 1.0),
+                            duration: const Duration(milliseconds: 220),
+                            curve: Curves.easeOutBack,
+                            builder: (context, val, child) {
+                              return Transform.scale(
+                                scale: val,
+                                child: Opacity(opacity: val.clamp(0.0, 1.0), child: child),
+                              );
+                            },
+                            child: widget.feedback!.isCorrect
+                                ? Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.check_circle_rounded,
+                                          size: 16, color: AppColors.emerald),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        '+${widget.feedback!.pointsEarned} pts',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.emerald,
+                                        ),
+                                      ),
+                                      if (widget.feedback!.speedTier != null) ...[
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          widget.feedback!.speedTier!.label,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  )
+                                : Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.cancel_rounded,
+                                          size: 16, color: AppColors.rose),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'Answer: ${widget.feedback!.expectedRomaji}',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.rose,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                          ),
                         ],
-                      ),
-                  ],
-                ],
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
-        ),
         ),
 
         const SizedBox(height: 16),
 
         // Bottom Controls: Choice Buttons OR Typing Field
-        if (settings.inputMode == InputMode.choice)
+        if (widget.settings.inputMode == InputMode.choice)
           _ChoiceModeGrid(
-            options: currentCard.options,
-            feedback: feedback,
-            onSelect: onSubmitAnswer,
+            options: widget.currentCard.options,
+            feedback: widget.feedback,
+            onSelect: widget.onSubmitAnswer,
           )
         else
           _TypingModeInput(
-            controller: textController,
-            focusNode: textFocusNode,
-            feedback: feedback,
-            onSubmit: onSubmitAnswer,
-            onKeyPress: onVirtualKeyPress,
-            onBackspace: onVirtualBackspace,
+            controller: widget.textController,
+            focusNode: widget.textFocusNode,
+            feedback: widget.feedback,
+            onSubmit: widget.onSubmitAnswer,
+            onKeyPress: widget.onVirtualKeyPress,
+            onBackspace: widget.onVirtualBackspace,
           ),
       ],
     );
@@ -383,35 +497,56 @@ class _ChoiceModeGrid extends StatelessWidget {
           Color btnColor = AppColors.surface;
           Color borderColor = AppColors.border;
           Color textColor = AppColors.text;
+          double opacity = 1.0;
 
           if (feedback != null) {
             if (isExpected) {
-              btnColor = AppColors.emerald.withValues(alpha: 0.2);
+              btnColor = AppColors.emerald.withValues(alpha: 0.22);
               borderColor = AppColors.emerald;
               textColor = AppColors.emerald;
             } else if (isChosen && !feedback!.isCorrect) {
-              btnColor = AppColors.rose.withValues(alpha: 0.2);
+              btnColor = AppColors.rose.withValues(alpha: 0.22);
               borderColor = AppColors.rose;
               textColor = AppColors.rose;
+            } else {
+              opacity = 0.45;
             }
           }
 
-          return InkWell(
+          return BouncingWidget(
+            scaleFactor: 0.94,
             onTap: feedback == null ? () => onSelect(romaji) : null,
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: btnColor,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: borderColor, width: 1.5),
-              ),
-              child: Text(
-                romaji,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: textColor,
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 200),
+              opacity: opacity,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: btnColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: borderColor,
+                    width: (isExpected || (isChosen && !feedback!.isCorrect)) ? 2.0 : 1.5,
+                  ),
+                  boxShadow: (isExpected || (isChosen && !feedback!.isCorrect))
+                      ? [
+                          BoxShadow(
+                            color: (isExpected ? AppColors.emerald : AppColors.rose)
+                                .withValues(alpha: 0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : [],
+                ),
+                child: Text(
+                  romaji,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
                 ),
               ),
             ),
@@ -473,11 +608,20 @@ class _TypingModeInput extends StatelessWidget {
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: AppColors.border),
+                borderSide: BorderSide(
+                  color: feedback != null
+                      ? (feedback!.isCorrect ? AppColors.emerald : AppColors.rose)
+                      : AppColors.border,
+                ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: AppColors.emerald, width: 2),
+                borderSide: BorderSide(
+                  color: feedback != null
+                      ? (feedback!.isCorrect ? AppColors.emerald : AppColors.rose)
+                      : AppColors.emerald,
+                  width: 2,
+                ),
               ),
             ),
             onSubmitted: (val) {
@@ -487,16 +631,21 @@ class _TypingModeInput extends StatelessWidget {
             },
           ),
           const SizedBox(height: 8),
-          // Compact Virtual Romaji Keyboard (row of vowels + consonants)
+          // Compact Virtual Romaji Keyboard with tactile press buttons
           Wrap(
             spacing: 5,
             runSpacing: 5,
             alignment: WrapAlignment.center,
             children: [
               ...'a,i,u,e,o,k,s,t,n,h,m,y,r,w,g,z,d,b,p,c,j'.split(',').map(
-                    (ch) => InkWell(
-                      onTap: () => onKeyPress(ch),
-                      borderRadius: BorderRadius.circular(6),
+                    (ch) => BouncingWidget(
+                      scaleFactor: 0.88,
+                      onTap: () {
+                        try {
+                          HapticFeedback.selectionClick();
+                        } catch (_) {}
+                        onKeyPress(ch);
+                      },
                       child: Container(
                         width: 30,
                         height: 32,
@@ -517,9 +666,14 @@ class _TypingModeInput extends StatelessWidget {
                       ),
                     ),
                   ),
-              InkWell(
-                onTap: onBackspace,
-                borderRadius: BorderRadius.circular(6),
+              BouncingWidget(
+                scaleFactor: 0.88,
+                onTap: () {
+                  try {
+                    HapticFeedback.selectionClick();
+                  } catch (_) {}
+                  onBackspace();
+                },
                 child: Container(
                   width: 38,
                   height: 32,

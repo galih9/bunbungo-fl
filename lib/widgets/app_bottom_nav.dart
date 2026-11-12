@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
+import 'animation_effects.dart';
 
 class AppBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -112,38 +114,71 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isSelected = index == currentIndex;
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    return BouncingWidget(
+      scaleFactor: 0.92,
+      onTap: () {
+        try {
+          HapticFeedback.lightImpact();
+        } catch (_) {}
+        onTap();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+        decoration: BoxDecoration(
+          color: isSelected ? activeColor.withValues(alpha: 0.12) : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Stack(
               clipBehavior: Clip.none,
               children: [
-                Icon(
-                  icon,
-                  size: 22,
-                  color: isSelected ? activeColor : AppColors.textSecondary,
+                AnimatedScale(
+                  scale: isSelected ? 1.15 : 1.0,
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutBack,
+                  child: Icon(
+                    icon,
+                    size: 22,
+                    color: isSelected ? activeColor : AppColors.textSecondary,
+                  ),
                 ),
                 if (badge != null)
                   Positioned(
                     top: -4,
                     right: -10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: badgeColor ?? AppColors.rose,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        badge!,
-                        style: const TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween<double>(begin: 0.0, end: 1.0),
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeOutBack,
+                      builder: (context, scale, child) {
+                        return Transform.scale(
+                          scale: scale,
+                          child: child,
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: badgeColor ?? AppColors.rose,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: (badgeColor ?? AppColors.rose).withValues(alpha: 0.35),
+                              blurRadius: 4,
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          badge!,
+                          style: const TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
@@ -160,12 +195,14 @@ class _NavItem extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 2),
-            Container(
-              width: 16,
-              height: 2,
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              width: isSelected ? 14 : 0,
+              height: 2.5,
               decoration: BoxDecoration(
                 color: isSelected ? activeColor : Colors.transparent,
-                borderRadius: BorderRadius.circular(1),
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
           ],

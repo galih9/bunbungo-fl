@@ -7,6 +7,7 @@ import '../providers/app_providers.dart';
 import '../services/audio_service.dart';
 import '../services/persistence_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/animation_effects.dart';
 import 'about_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -1453,7 +1454,9 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
     final hasChanges = _hasChanges;
     final accent = _draftSettings.accentColor.color;
 
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 240),
+      curve: Curves.easeOutCubic,
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
@@ -1461,6 +1464,15 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
           color: hasChanges ? accent : AppColors.border,
           width: hasChanges ? 1.5 : 1.0,
         ),
+        boxShadow: hasChanges
+            ? [
+                BoxShadow(
+                  color: accent.withValues(alpha: 0.18),
+                  blurRadius: 14,
+                  offset: const Offset(0, 3),
+                ),
+              ]
+            : [],
       ),
       padding: const EdgeInsets.all(18),
       child: Column(
@@ -1468,7 +1480,8 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
         children: [
           Row(
             children: [
-              Container(
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 240),
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: hasChanges
@@ -1512,35 +1525,46 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _saveConfiguration,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: hasChanges ? accent : AppColors.text,
-              foregroundColor: hasChanges ? Colors.black : AppColors.background,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-              elevation: hasChanges ? 3 : 0,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.save_rounded,
-                  size: 18,
-                  color: hasChanges ? Colors.black : AppColors.background,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Save Configuration',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: hasChanges ? Colors.black : AppColors.background,
+          GlowPulseWidget(
+            glowColor: accent,
+            animate: hasChanges,
+            minScale: 1.0,
+            maxScale: 1.015,
+            duration: const Duration(milliseconds: 1400),
+            child: BouncingWidget(
+              scaleFactor: 0.96,
+              onTap: _saveConfiguration,
+              child: ElevatedButton(
+                onPressed: _saveConfiguration,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: hasChanges ? accent : AppColors.text,
+                  foregroundColor: hasChanges ? Colors.black : AppColors.background,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
                   ),
+                  elevation: hasChanges ? 3 : 0,
                 ),
-              ],
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.save_rounded,
+                      size: 18,
+                      color: hasChanges ? Colors.black : AppColors.background,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Save Configuration',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: hasChanges ? Colors.black : AppColors.background,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],

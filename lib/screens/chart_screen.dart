@@ -7,6 +7,7 @@ import '../models/kana_item.dart';
 import '../providers/app_providers.dart';
 import '../services/persistence_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/animation_effects.dart';
 import '../widgets/character_detail_sheet.dart';
 
 class ChartScreen extends ConsumerStatefulWidget {
@@ -265,7 +266,8 @@ class ChartScreenState extends ConsumerState<ChartScreen> {
                     break;
                 }
 
-                return InkWell(
+                return BouncingWidget(
+                  scaleFactor: 0.92,
                   onTap: () {
                     showModalBottomSheet(
                       context: context,
@@ -278,7 +280,6 @@ class ChartScreenState extends ConsumerState<ChartScreen> {
                       ),
                     );
                   },
-                  borderRadius: BorderRadius.circular(10),
                   child: Container(
                     decoration: BoxDecoration(
                       color: AppColors.surface,
@@ -368,10 +369,11 @@ class _ScriptTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return BouncingWidget(
+      scaleFactor: 0.92,
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.surface : Colors.transparent,
@@ -403,16 +405,17 @@ class _CategoryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return BouncingWidget(
+      scaleFactor: 0.94,
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.surfaceElevated : AppColors.surface,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? AppColors.amber.withValues(alpha: 0.5) : AppColors.border,
+            color: isSelected ? AppColors.borderLight : AppColors.border,
           ),
         ),
         child: Text(
@@ -420,7 +423,7 @@ class _CategoryChip extends StatelessWidget {
           style: TextStyle(
             fontSize: 11,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            color: isSelected ? AppColors.amber : AppColors.textSecondary,
+            color: isSelected ? AppColors.text : AppColors.textSecondary,
           ),
         ),
       ),

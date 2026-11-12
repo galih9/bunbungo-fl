@@ -10,6 +10,7 @@ import '../models/user_progression.dart';
 import '../providers/app_providers.dart';
 import '../services/persistence_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/animation_effects.dart';
 import '../widgets/character_detail_sheet.dart';
 
 enum StatsSubTab { analytics, achievements, leaderboard }
@@ -593,17 +594,29 @@ class _SubTabButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: InkWell(
+      child: BouncingWidget(
+        scaleFactor: 0.94,
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
             color: isSelected ? AppColors.surfaceElevated : AppColors.surface,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: isSelected ? AppColors.purple.withValues(alpha: 0.5) : AppColors.border,
+              color: isSelected ? AppColors.purple.withValues(alpha: 0.6) : AppColors.border,
+              width: isSelected ? 1.5 : 1.0,
             ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: AppColors.purple.withValues(alpha: 0.15),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : [],
           ),
           alignment: Alignment.center,
           child: Text(

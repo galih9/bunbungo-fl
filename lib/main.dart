@@ -106,7 +106,8 @@ class MainShell extends ConsumerStatefulWidget {
   ConsumerState<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends ConsumerState<MainShell> {
+class _MainShellState extends ConsumerState<MainShell>
+    with SingleTickerProviderStateMixin {
   final GlobalKey<ArenaScreenState> _arenaKey = GlobalKey<ArenaScreenState>();
   final GlobalKey<DashboardScreenState> _dashboardKey =
       GlobalKey<DashboardScreenState>();
@@ -114,6 +115,38 @@ class _MainShellState extends ConsumerState<MainShell> {
   final GlobalKey<StatsScreenState> _statsKey = GlobalKey<StatsScreenState>();
   final GlobalKey<SettingsScreenState> _settingsKey =
       GlobalKey<SettingsScreenState>();
+
+  late final AnimationController _tabTransitionController;
+  late final Animation<double> _fadeAnimation;
+  late final Animation<Offset> _slideAnimation;
+  int _lastTab = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabTransitionController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _tabTransitionController,
+      curve: Curves.easeOut,
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0.0, 0.02),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _tabTransitionController,
+      curve: Curves.easeOutCubic,
+    ));
+    _tabTransitionController.value = 1.0;
+  }
+
+  @override
+  void dispose() {
+    _tabTransitionController.dispose();
+    super.dispose();
+  }
 
   void _onDataChanged() {
     _arenaKey.currentState?.refreshData();
@@ -131,6 +164,11 @@ class _MainShellState extends ConsumerState<MainShell> {
   @override
   Widget build(BuildContext context) {
     final activeTabIndex = ref.watch(activeTabProvider);
+    if (activeTabIndex != _lastTab) {
+      _lastTab = activeTabIndex;
+      _tabTransitionController.forward(from: 0.0);
+    }
+
     final isPracticing = ref.watch(isPracticingSessionProvider);
     final settings = ref.watch(gameSettingsProvider);
     final progression = ref.watch(userProgressionProvider);
@@ -157,44 +195,50 @@ class _MainShellState extends ConsumerState<MainShell> {
         unlockedAchievements: unlockedAchievementsCount,
       ),
       body: SafeArea(
-        child: IndexedStack(
-          index: activeTabIndex,
-          children: [
-            ArenaScreen(
-              key: _arenaKey,
-              persistence: widget.persistence,
-              onDataChanged: _onDataChanged,
-              onNavigateTab: _navigateToTab,
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: SlideTransition(
+            position: _slideAnimation,
+            child: IndexedStack(
+              index: activeTabIndex,
+              children: [
+                ArenaScreen(
+                  key: _arenaKey,
+                  persistence: widget.persistence,
+                  onDataChanged: _onDataChanged,
+                  onNavigateTab: _navigateToTab,
+                ),
+                DashboardScreen(
+                  key: _dashboardKey,
+                  persistence: widget.persistence,
+                  onDataChanged: _onDataChanged,
+                  onNavigateTab: _navigateToTab,
+                  onStartWeakLetters: () {
+                    _navigateToTab(0);
+                    _arenaKey.currentState?.startWeakLettersSession();
+                  },
+                ),
+                ChartScreen(
+                  key: _chartKey,
+                  persistence: widget.persistence,
+                  onDataChanged: _onDataChanged,
+                  onNavigateTab: _navigateToTab,
+                ),
+                StatsScreen(
+                  key: _statsKey,
+                  persistence: widget.persistence,
+                  onDataChanged: _onDataChanged,
+                  onNavigateTab: _navigateToTab,
+                ),
+                SettingsScreen(
+                  key: _settingsKey,
+                  persistence: widget.persistence,
+                  onDataChanged: _onDataChanged,
+                  onNavigateTab: _navigateToTab,
+                ),
+              ],
             ),
-            DashboardScreen(
-              key: _dashboardKey,
-              persistence: widget.persistence,
-              onDataChanged: _onDataChanged,
-              onNavigateTab: _navigateToTab,
-              onStartWeakLetters: () {
-                _navigateToTab(0);
-                _arenaKey.currentState?.startWeakLettersSession();
-              },
-            ),
-            ChartScreen(
-              key: _chartKey,
-              persistence: widget.persistence,
-              onDataChanged: _onDataChanged,
-              onNavigateTab: _navigateToTab,
-            ),
-            StatsScreen(
-              key: _statsKey,
-              persistence: widget.persistence,
-              onDataChanged: _onDataChanged,
-              onNavigateTab: _navigateToTab,
-            ),
-            SettingsScreen(
-              key: _settingsKey,
-              persistence: widget.persistence,
-              onDataChanged: _onDataChanged,
-              onNavigateTab: _navigateToTab,
-            ),
-          ],
+          ),
         ),
       ),
       bottomNavigationBar: isPracticing

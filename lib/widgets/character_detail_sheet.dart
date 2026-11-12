@@ -4,6 +4,7 @@ import '../models/character_mastery.dart';
 import '../models/kana_item.dart';
 import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
+import 'animation_effects.dart';
 
 class CharacterDetailSheet extends StatelessWidget {
   final KanaItem item;
@@ -276,29 +277,52 @@ class CharacterDetailSheet extends StatelessWidget {
           // Action Button
           Row(
             children: [
-              IconButton(
-                icon: Icon(Icons.volume_up_rounded, color: AppColors.text),
-                tooltip: 'Play Audio Feedback',
-                onPressed: () {
+              BouncingWidget(
+                scaleFactor: 0.88,
+                onTap: () {
                   AudioService.playCorrect(1, true);
                 },
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Icon(Icons.volume_up_rounded, color: AppColors.text, size: 20),
+                ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
+                child: BouncingWidget(
+                  scaleFactor: 0.96,
+                  onTap: () {
                     Navigator.pop(context);
                     onPracticeCharacter?.call();
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.text,
-                    foregroundColor: AppColors.background,
+                  child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
+                    decoration: BoxDecoration(
+                      color: AppColors.text,
                       borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.text.withValues(alpha: 0.2),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      'Practice "${item.romaji}" Kana',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.background,
+                      ),
                     ),
                   ),
-                  child: Text('Practice "${item.romaji}" Kana'),
                 ),
               ),
             ],
