@@ -61,11 +61,11 @@ class LobbyProgressionBanner extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.bolt_rounded, size: 14, color: AppColors.amber),
+                        Icon(Icons.bolt_rounded, size: 14, color: AppColors.amber),
                         const SizedBox(width: 4),
                         Text(
                           'Lv.$currentLevel ${getRankTitleForLevel(currentLevel)}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                             color: AppColors.text,
@@ -91,7 +91,7 @@ class LobbyProgressionBanner extends StatelessWidget {
                         const Text('🔥 ', style: TextStyle(fontSize: 12)),
                         Text(
                           '${progression.currentDailyStreak}d Streak',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             color: AppColors.text,
@@ -113,11 +113,11 @@ class LobbyProgressionBanner extends StatelessWidget {
             children: [
               Text(
                 'XP Progress (${(levelProgress * 100).round()}%)',
-                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
               ),
               Text(
                 '${progression.xp} / $nextThreshold XP',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textSecondary,
@@ -132,7 +132,7 @@ class LobbyProgressionBanner extends StatelessWidget {
               value: levelProgress,
               minHeight: 6,
               backgroundColor: AppColors.surfaceElevated,
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.emerald),
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.emerald),
             ),
           ),
 
@@ -150,20 +150,20 @@ class LobbyProgressionBanner extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.priority_high_rounded,
+                    Icon(Icons.priority_high_rounded,
                         size: 16, color: AppColors.rose),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Targeted Review: $weakCount weak Kana detected',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: AppColors.rose,
                         ),
                       ),
                     ),
-                    const Text(
+                    Text(
                       'Drill Now →',
                       style: TextStyle(
                         fontSize: 11,

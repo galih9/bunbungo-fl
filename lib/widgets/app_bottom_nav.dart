@@ -22,7 +22,7 @@ class AppBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.background,
         border: Border(
           top: BorderSide(color: AppColors.border, width: 1),
@@ -72,6 +72,14 @@ class AppBottomNav extends StatelessWidget {
             badge: unlockedAchievements > 0 ? '$unlockedAchievements' : null,
             badgeColor: AppColors.purple,
             onTap: () => onTabSelected(3),
+          ),
+          _NavItem(
+            index: 4,
+            currentIndex: currentIndex,
+            label: 'Settings',
+            icon: Icons.tune_rounded,
+            activeColor: AppColors.rose,
+            onTap: () => onTabSelected(4),
           ),
         ],
       ),

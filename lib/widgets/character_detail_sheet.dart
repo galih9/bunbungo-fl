@@ -41,7 +41,7 @@ class CharacterDetailSheet extends StatelessWidget {
     }
 
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -82,7 +82,7 @@ class CharacterDetailSheet extends StatelessWidget {
                 alignment: Alignment.center,
                 child: Text(
                   item.hiragana,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 40,
                     fontWeight: FontWeight.bold,
                     color: AppColors.text,
@@ -101,7 +101,7 @@ class CharacterDetailSheet extends StatelessWidget {
                 alignment: Alignment.center,
                 child: Text(
                   item.katakana,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 40,
                     fontWeight: FontWeight.bold,
                     color: AppColors.text,
@@ -117,7 +117,7 @@ class CharacterDetailSheet extends StatelessWidget {
                       children: [
                         Text(
                           item.romaji,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                             color: AppColors.text,
@@ -147,7 +147,7 @@ class CharacterDetailSheet extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       'Alt: ${item.acceptedRomaji.join(", ")}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         color: AppColors.textSecondary,
                       ),
@@ -155,7 +155,7 @@ class CharacterDetailSheet extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       item.category.label,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         color: AppColors.textMuted,
                       ),
@@ -178,13 +178,13 @@ class CharacterDetailSheet extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.lightbulb_outline_rounded,
+                Icon(Icons.lightbulb_outline_rounded,
                     size: 16, color: AppColors.amber),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     item.hint,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       color: AppColors.text,
                     ),
@@ -197,7 +197,7 @@ class CharacterDetailSheet extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Mastery Metrics
-          const Text(
+          Text(
             'PERFORMANCE METRICS',
             style: TextStyle(
               fontSize: 11,
@@ -236,7 +236,7 @@ class CharacterDetailSheet extends StatelessWidget {
 
           if (confusions.isNotEmpty) ...[
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'OFTEN CONFUSED WITH',
               style: TextStyle(
                 fontSize: 11,
@@ -260,7 +260,7 @@ class CharacterDetailSheet extends StatelessWidget {
                   ),
                   child: Text(
                     '${c.key} (${c.value}x)',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                       color: AppColors.rose,
@@ -277,7 +277,7 @@ class CharacterDetailSheet extends StatelessWidget {
           Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.volume_up_rounded, color: AppColors.text),
+                icon: Icon(Icons.volume_up_rounded, color: AppColors.text),
                 tooltip: 'Play Audio Feedback',
                 onPressed: () {
                   AudioService.playCorrect(1, true);
@@ -292,7 +292,7 @@ class CharacterDetailSheet extends StatelessWidget {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.text,
-                    foregroundColor: Colors.black,
+                    foregroundColor: AppColors.background,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -334,7 +334,7 @@ class _MetricTile extends StatelessWidget {
           children: [
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 9,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textMuted,

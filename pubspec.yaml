@@ -19,7 +19,6 @@ dependencies:
   animations: ^3.0.0
   flutter_native_splash: ^2.4.8
   freezed_annotation: ^3.1.0
-  flutter_local_notifications: ^23.0.1
   package_info_plus: ^10.2.2
   shared_preferences: ^2.5.6
 

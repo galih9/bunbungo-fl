@@ -56,7 +56,7 @@ class DashboardScreenState extends State<DashboardScreen> {
     _loadState();
     widget.onDataChanged();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+      SnackBar(
         content: Text('Demo telemetry seeded successfully! Explore charts & stats.'),
         backgroundColor: AppColors.emerald,
       ),
@@ -68,15 +68,15 @@ class DashboardScreenState extends State<DashboardScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
-        title: const Text('Reset All Progress?', style: TextStyle(color: AppColors.text)),
-        content: const Text(
+        title: Text('Reset All Progress?', style: TextStyle(color: AppColors.text)),
+        content: Text(
           'This will permanently clear all mastery data, unlocked rows, streaks, and local high scores.',
           style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+            child: Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -85,7 +85,7 @@ class DashboardScreenState extends State<DashboardScreen> {
               _loadState();
               widget.onDataChanged();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
+                SnackBar(
                   content: Text('All progress has been reset.'),
                   backgroundColor: AppColors.rose,
                 ),
@@ -128,7 +128,7 @@ class DashboardScreenState extends State<DashboardScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'PERFORMANCE DASHBOARD',
                 style: TextStyle(
                   fontSize: 11,
@@ -138,7 +138,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               const SizedBox(height: 2),
-              const Text(
+              Text(
                 'Learner Telemetry & Analytics',
                 style: TextStyle(
                   fontSize: 22,
@@ -147,7 +147,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 'Real-time accuracy distributions, mastery coverage, and smart study recommendations.',
                 style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
               ),
@@ -257,7 +257,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                       strokeWidth: 6,
                       backgroundColor: AppColors.surfaceElevated,
                       valueColor:
-                          const AlwaysStoppedAnimation<Color>(AppColors.emerald),
+                          AlwaysStoppedAnimation<Color>(AppColors.emerald),
                     ),
                   ),
                   Column(
@@ -265,13 +265,13 @@ class DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       Text(
                         '${summary.overallProficiencyScore}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: AppColors.text,
                         ),
                       ),
-                      const Text(
+                      Text(
                         'SCORE',
                         style: TextStyle(
                           fontSize: 8,
@@ -290,7 +290,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Proficiency Rating',
                       style: TextStyle(
                         fontSize: 14,
@@ -301,7 +301,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(height: 4),
                     Text(
                       '${summary.coveragePercent}% Syllabary Coverage (${summary.analysis.totalAttempts} total attempts)',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         color: AppColors.textSecondary,
                       ),
@@ -309,7 +309,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(height: 2),
                     Text(
                       '${summary.masteryPercent}% Kana Mastered (Strong status)',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         color: AppColors.emerald,
                         fontWeight: FontWeight.w600,
@@ -368,7 +368,7 @@ class DashboardScreenState extends State<DashboardScreen> {
           children: [
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 9,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textMuted,
@@ -403,7 +403,7 @@ class DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'CHARACTER SPOTLIGHT',
             style: TextStyle(
               fontSize: 11,
@@ -415,13 +415,13 @@ class DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(height: 12),
 
           // Weakest Kana
-          const Text(
+          Text(
             'Needs Review (Lowest Accuracy)',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.rose),
           ),
           const SizedBox(height: 8),
           if (weakItems.isEmpty)
-            const Text(
+            Text(
               'No weak characters! Practice more cards to detect trouble spots.',
               style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
             )
@@ -458,7 +458,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                       children: [
                         Text(
                           item.hiragana,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: AppColors.text,
@@ -470,7 +470,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                           children: [
                             Text(
                               item.romaji,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.rose,
@@ -478,7 +478,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                             ),
                             Text(
                               accuracy != null ? '$accuracy%' : '—',
-                              style: const TextStyle(fontSize: 9, color: AppColors.textMuted),
+                              style: TextStyle(fontSize: 9, color: AppColors.textMuted),
                             ),
                           ],
                         ),
@@ -492,13 +492,13 @@ class DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(height: 16),
 
           // Strongest Kana
-          const Text(
+          Text(
             'Top Mastered (High Reflex Speed)',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.emerald),
           ),
           const SizedBox(height: 8),
           if (strongItems.isEmpty)
-            const Text(
+            Text(
               'Complete sprints to build strong mastery tiers.',
               style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
             )
@@ -533,7 +533,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                       children: [
                         Text(
                           item.hiragana,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: AppColors.text,
@@ -542,7 +542,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                         const SizedBox(width: 6),
                         Text(
                           item.romaji,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                             color: AppColors.emerald,
@@ -570,7 +570,7 @@ class DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'STUDY RECOMMENDATIONS',
             style: TextStyle(
               fontSize: 11,
@@ -610,7 +610,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                         const SizedBox(height: 2),
                         Text(
                           rec.description,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
                             color: AppColors.textSecondary,
                           ),
@@ -655,7 +655,7 @@ class DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'MASTERY DISTRIBUTION',
             style: TextStyle(
               fontSize: 11,
@@ -723,7 +723,7 @@ class DashboardScreenState extends State<DashboardScreen> {
         const SizedBox(width: 4),
         Text(
           '$label: $count ($pct%)',
-          style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+          style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
         ),
       ],
     );
@@ -740,7 +740,7 @@ class DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'RESPONSE SPEED REFLEX',
             style: TextStyle(
               fontSize: 11,
@@ -766,11 +766,11 @@ class DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       Text(
                         '${bucket.label} (${bucket.rangeLabel})',
-                        style: const TextStyle(fontSize: 11, color: AppColors.text),
+                        style: TextStyle(fontSize: 11, color: AppColors.text),
                       ),
                       Text(
                         '${bucket.count} letters (${bucket.sharePercent}%)',
-                        style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                        style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                       ),
                     ],
                   ),
@@ -807,7 +807,7 @@ class DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'SCRIPT FLUENCY COMPARISON',
                 style: TextStyle(
                   fontSize: 11,
@@ -833,7 +833,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                         children: [
                           Text(
                             s.label,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
                               color: AppColors.text,
@@ -852,7 +852,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                           ),
                           Text(
                             '${s.correct} / ${s.attempts} correct (${s.practicedCharacterCount} practiced)',
-                            style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+                            style: TextStyle(fontSize: 10, color: AppColors.textMuted),
                           ),
                         ],
                       ),
@@ -877,7 +877,7 @@ class DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'SYLLABARY CATEGORY MASTERY',
                 style: TextStyle(
                   fontSize: 11,
@@ -896,7 +896,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                         flex: 3,
                         child: Text(
                           cat.shortLabel,
-                          style: const TextStyle(fontSize: 12, color: AppColors.text),
+                          style: TextStyle(fontSize: 12, color: AppColors.text),
                         ),
                       ),
                       Expanded(
@@ -908,7 +908,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                             minHeight: 6,
                             backgroundColor: AppColors.surfaceElevated,
                             valueColor:
-                                const AlwaysStoppedAnimation<Color>(AppColors.emerald),
+                                AlwaysStoppedAnimation<Color>(AppColors.emerald),
                           ),
                         ),
                       ),
@@ -918,7 +918,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                         child: Text(
                           '${cat.masteryPercent}%',
                           textAlign: TextAlign.end,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                             color: AppColors.textSecondary,
@@ -947,7 +947,7 @@ class DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'RECENT SESSION TRENDS',
             style: TextStyle(
               fontSize: 11,
@@ -974,7 +974,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       Text(
                         run.sessionLabel,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: AppColors.text,
@@ -983,7 +983,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                       const SizedBox(height: 4),
                       Text(
                         '${run.score}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                           color: AppColors.amber,
@@ -991,11 +991,11 @@ class DashboardScreenState extends State<DashboardScreen> {
                       ),
                       Text(
                         '${run.accuracy}% acc',
-                        style: const TextStyle(fontSize: 10, color: AppColors.emerald),
+                        style: TextStyle(fontSize: 10, color: AppColors.emerald),
                       ),
                       Text(
                         run.dateLabel,
-                        style: const TextStyle(fontSize: 9, color: AppColors.textMuted),
+                        style: TextStyle(fontSize: 9, color: AppColors.textMuted),
                       ),
                     ],
                   ),

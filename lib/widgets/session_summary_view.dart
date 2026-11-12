@@ -60,7 +60,7 @@ class SessionSummaryView extends StatelessWidget {
                   child: const Text('🏆', style: TextStyle(fontSize: 26)),
                 ),
                 const SizedBox(height: 12),
-                const Text(
+                Text(
                   'Session Complete!',
                   style: TextStyle(
                     fontSize: 20,
@@ -128,7 +128,7 @@ class SessionSummaryView extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'PROGRESSION EARNED',
                         style: TextStyle(
                           fontSize: 11,
@@ -139,7 +139,7 @@ class SessionSummaryView extends StatelessWidget {
                       ),
                       Text(
                         '+${result!.xpEarned} XP',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                           color: AppColors.emerald,
@@ -163,7 +163,7 @@ class SessionSummaryView extends StatelessWidget {
                           Expanded(
                             child: Text(
                               'LEVEL UP! You are now Level ${result!.newLevel}!',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.emerald,
@@ -186,13 +186,13 @@ class SessionSummaryView extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.lock_open_rounded,
+                          Icon(Icons.lock_open_rounded,
                               size: 16, color: AppColors.amber),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'Unlocked ${result!.newlyUnlockedRows.length} new Kana row(s)!',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.amber,
@@ -215,13 +215,13 @@ class SessionSummaryView extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.military_tech_rounded,
+                          Icon(Icons.military_tech_rounded,
                               size: 16, color: AppColors.purple),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'Unlocked Badges: ${result!.newlyUnlockedAchievements.map((a) => a.title).join(", ")}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.purple,
@@ -255,7 +255,7 @@ class SessionSummaryView extends StatelessWidget {
                     children: [
                       Text(
                         'MISSED KANA (${missedItems.length})',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1.1,
@@ -264,7 +264,7 @@ class SessionSummaryView extends StatelessWidget {
                       ),
                       InkWell(
                         onTap: () => onPracticeMissedItems(missedItems),
-                        child: const Text(
+                        child: Text(
                           'Practice These →',
                           style: TextStyle(
                             fontSize: 11,
@@ -294,7 +294,7 @@ class SessionSummaryView extends StatelessWidget {
                           children: [
                             Text(
                               item.hiragana,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.text,
@@ -303,7 +303,7 @@ class SessionSummaryView extends StatelessWidget {
                             const SizedBox(width: 6),
                             Text(
                               item.romaji,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11,
                                 color: AppColors.rose,
                                 fontWeight: FontWeight.w600,
@@ -325,7 +325,7 @@ class SessionSummaryView extends StatelessWidget {
             onPressed: onPlayAgain,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.text,
-              foregroundColor: Colors.black,
+              foregroundColor: AppColors.background,
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -343,7 +343,7 @@ class SessionSummaryView extends StatelessWidget {
               onPressed: onPracticeWeakLetters,
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.rose,
-                side: const BorderSide(color: AppColors.rose),
+                side: BorderSide(color: AppColors.rose),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -361,7 +361,7 @@ class SessionSummaryView extends StatelessWidget {
             onPressed: onCustomizeDeck,
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.textSecondary,
-              side: const BorderSide(color: AppColors.border),
+              side: BorderSide(color: AppColors.border),
               padding: const EdgeInsets.symmetric(vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -403,7 +403,7 @@ class _MetricCard extends StatelessWidget {
           children: [
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 9,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1,

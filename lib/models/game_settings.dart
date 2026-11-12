@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 enum ScriptSelection {
   hiragana,
   katakana,
@@ -11,6 +13,77 @@ enum ScriptSelection {
         return 'Katakana';
       case ScriptSelection.mixed:
         return 'Mixed Script';
+    }
+  }
+}
+
+enum AppThemeMode {
+  system,
+  dark,
+  light,
+  oled;
+
+  String get label {
+    switch (this) {
+      case AppThemeMode.system:
+        return 'System';
+      case AppThemeMode.dark:
+        return 'Dark Zinc';
+      case AppThemeMode.light:
+        return 'Light Zen';
+      case AppThemeMode.oled:
+        return 'Midnight OLED';
+    }
+  }
+
+  String get subtitle {
+    switch (this) {
+      case AppThemeMode.system:
+        return 'Match device OS display appearance';
+      case AppThemeMode.dark:
+        return 'Modern zinc dark aesthetic with neon accents';
+      case AppThemeMode.light:
+        return 'Clean paper white aesthetic with crisp contrast';
+      case AppThemeMode.oled:
+        return 'Pure pitch black mode for OLED displays';
+    }
+  }
+}
+
+enum AppAccentColor {
+  emerald,
+  sky,
+  purple,
+  amber,
+  rose;
+
+  String get label {
+    switch (this) {
+      case AppAccentColor.emerald:
+        return 'Emerald';
+      case AppAccentColor.sky:
+        return 'Sky Blue';
+      case AppAccentColor.purple:
+        return 'Neon Purple';
+      case AppAccentColor.amber:
+        return 'Cyber Amber';
+      case AppAccentColor.rose:
+        return 'Sakura Rose';
+    }
+  }
+
+  Color get color {
+    switch (this) {
+      case AppAccentColor.emerald:
+        return const Color(0xFF34D399);
+      case AppAccentColor.sky:
+        return const Color(0xFF38BDF8);
+      case AppAccentColor.purple:
+        return const Color(0xFFA855F7);
+      case AppAccentColor.amber:
+        return const Color(0xFFFBBF24);
+      case AppAccentColor.rose:
+        return const Color(0xFFFB7185);
     }
   }
 }
@@ -80,6 +153,13 @@ class StoredGameSettings {
   final bool voiceEnabled;
   final bool showTouchKeyboard;
   final int sprintDeckSize;
+  final AppThemeMode themeMode;
+  final AppAccentColor accentColor;
+  final bool hapticEnabled;
+  final double sfxVolume;
+  final bool autoPlayVoice;
+  final double voiceSpeed;
+  final double voiceVolume;
 
   const StoredGameSettings({
     this.scriptMode = ScriptSelection.hiragana,
@@ -90,6 +170,13 @@ class StoredGameSettings {
     this.voiceEnabled = true,
     this.showTouchKeyboard = true,
     this.sprintDeckSize = 20,
+    this.themeMode = AppThemeMode.dark,
+    this.accentColor = AppAccentColor.emerald,
+    this.hapticEnabled = true,
+    this.sfxVolume = 1.0,
+    this.autoPlayVoice = false,
+    this.voiceSpeed = 1.0,
+    this.voiceVolume = 1.0,
   });
 
   StoredGameSettings copyWith({
@@ -101,6 +188,13 @@ class StoredGameSettings {
     bool? voiceEnabled,
     bool? showTouchKeyboard,
     int? sprintDeckSize,
+    AppThemeMode? themeMode,
+    AppAccentColor? accentColor,
+    bool? hapticEnabled,
+    double? sfxVolume,
+    bool? autoPlayVoice,
+    double? voiceSpeed,
+    double? voiceVolume,
   }) {
     return StoredGameSettings(
       scriptMode: scriptMode ?? this.scriptMode,
@@ -111,6 +205,13 @@ class StoredGameSettings {
       voiceEnabled: voiceEnabled ?? this.voiceEnabled,
       showTouchKeyboard: showTouchKeyboard ?? this.showTouchKeyboard,
       sprintDeckSize: sprintDeckSize ?? this.sprintDeckSize,
+      themeMode: themeMode ?? this.themeMode,
+      accentColor: accentColor ?? this.accentColor,
+      hapticEnabled: hapticEnabled ?? this.hapticEnabled,
+      sfxVolume: sfxVolume ?? this.sfxVolume,
+      autoPlayVoice: autoPlayVoice ?? this.autoPlayVoice,
+      voiceSpeed: voiceSpeed ?? this.voiceSpeed,
+      voiceVolume: voiceVolume ?? this.voiceVolume,
     );
   }
 
@@ -123,6 +224,13 @@ class StoredGameSettings {
         'voiceEnabled': voiceEnabled,
         'showTouchKeyboard': showTouchKeyboard,
         'sprintDeckSize': sprintDeckSize,
+        'themeMode': themeMode.name,
+        'accentColor': accentColor.name,
+        'hapticEnabled': hapticEnabled,
+        'sfxVolume': sfxVolume,
+        'autoPlayVoice': autoPlayVoice,
+        'voiceSpeed': voiceSpeed,
+        'voiceVolume': voiceVolume,
       };
 
   factory StoredGameSettings.fromJson(Map<String, dynamic> json) {
@@ -144,6 +252,20 @@ class StoredGameSettings {
       return InputMode.choice;
     }
 
+    AppThemeMode parseTheme(String? val) {
+      for (final t in AppThemeMode.values) {
+        if (t.name == val) return t;
+      }
+      return AppThemeMode.dark;
+    }
+
+    AppAccentColor parseAccent(String? val) {
+      for (final a in AppAccentColor.values) {
+        if (a.name == val) return a;
+      }
+      return AppAccentColor.emerald;
+    }
+
     final rawRows = json['selectedRows'];
     List<String> rows = const ['row-a', 'row-ka', 'row-sa'];
     if (rawRows is List) {
@@ -160,6 +282,51 @@ class StoredGameSettings {
       voiceEnabled: json['voiceEnabled'] as bool? ?? true,
       showTouchKeyboard: json['showTouchKeyboard'] as bool? ?? true,
       sprintDeckSize: json['sprintDeckSize'] as int? ?? 20,
+      themeMode: parseTheme(json['themeMode']?.toString()),
+      accentColor: parseAccent(json['accentColor']?.toString()),
+      hapticEnabled: json['hapticEnabled'] as bool? ?? true,
+      sfxVolume: (json['sfxVolume'] as num?)?.toDouble() ?? 1.0,
+      autoPlayVoice: json['autoPlayVoice'] as bool? ?? false,
+      voiceSpeed: (json['voiceSpeed'] as num?)?.toDouble() ?? 1.0,
+      voiceVolume: (json['voiceVolume'] as num?)?.toDouble() ?? 1.0,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is StoredGameSettings &&
+          runtimeType == other.runtimeType &&
+          scriptMode == other.scriptMode &&
+          gameMode == other.gameMode &&
+          inputMode == other.inputMode &&
+          soundEnabled == other.soundEnabled &&
+          voiceEnabled == other.voiceEnabled &&
+          showTouchKeyboard == other.showTouchKeyboard &&
+          sprintDeckSize == other.sprintDeckSize &&
+          themeMode == other.themeMode &&
+          accentColor == other.accentColor &&
+          hapticEnabled == other.hapticEnabled &&
+          (sfxVolume - other.sfxVolume).abs() < 0.001 &&
+          autoPlayVoice == other.autoPlayVoice &&
+          (voiceSpeed - other.voiceSpeed).abs() < 0.001 &&
+          (voiceVolume - other.voiceVolume).abs() < 0.001;
+
+  @override
+  int get hashCode => Object.hash(
+        scriptMode,
+        gameMode,
+        inputMode,
+        soundEnabled,
+        voiceEnabled,
+        showTouchKeyboard,
+        sprintDeckSize,
+        themeMode,
+        accentColor,
+        hapticEnabled,
+        sfxVolume,
+        autoPlayVoice,
+        voiceSpeed,
+        voiceVolume,
+      );
 }

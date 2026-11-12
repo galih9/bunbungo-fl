@@ -490,7 +490,7 @@ class ArenaScreenState extends State<ArenaScreen> {
                     onPressed: startStandardSession,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.text,
-                      foregroundColor: Colors.black,
+                      foregroundColor: AppColors.background,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),

@@ -94,7 +94,7 @@ class StatsScreenState extends State<StatsScreen> {
                         children: [
                           Text(
                             getRankTitleForLevel(_progression.level),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: AppColors.text,
@@ -111,7 +111,7 @@ class StatsScreenState extends State<StatsScreen> {
                             ),
                             child: Text(
                               'Lv.${_progression.level}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.purple,
@@ -123,7 +123,7 @@ class StatsScreenState extends State<StatsScreen> {
                       const SizedBox(height: 4),
                       Text(
                         '$unlockedBadges/${achievements.length} Badges Unlocked · ${_progression.bestAnswerStreak}x Best Streak',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           color: AppColors.textSecondary,
                         ),
@@ -210,9 +210,9 @@ class StatsScreenState extends State<StatsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.analytics_outlined, size: 40, color: AppColors.textMuted),
+            Icon(Icons.analytics_outlined, size: 40, color: AppColors.textMuted),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'No Practice Telemetry Yet',
               style: TextStyle(
                 fontSize: 14,
@@ -221,7 +221,7 @@ class StatsScreenState extends State<StatsScreen> {
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Complete your first arena sprint or seed demo data in the Dashboard.',
               style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
               textAlign: TextAlign.center,
@@ -231,7 +231,7 @@ class StatsScreenState extends State<StatsScreen> {
               onPressed: () => widget.onNavigateTab(0),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.text,
-                foregroundColor: Colors.black,
+                foregroundColor: AppColors.background,
               ),
               child: const Text('Start Arena Session'),
             ),
@@ -301,7 +301,7 @@ class StatsScreenState extends State<StatsScreen> {
                   alignment: Alignment.center,
                   child: Text(
                     item.hiragana,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: AppColors.text,
@@ -317,7 +317,7 @@ class StatsScreenState extends State<StatsScreen> {
                         children: [
                           Text(
                             item.romaji,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                               color: AppColors.text,
@@ -345,7 +345,7 @@ class StatsScreenState extends State<StatsScreen> {
                       const SizedBox(height: 2),
                       Text(
                         '${stats?.attempts ?? 0} attempts · ${stats?.streak ?? 0}x streak',
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 11, color: AppColors.textSecondary),
                       ),
                     ],
@@ -366,7 +366,7 @@ class StatsScreenState extends State<StatsScreen> {
                     ),
                     Text(
                       avgMs != null ? '${(avgMs / 1000).toStringAsFixed(1)}s' : '—',
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 10, color: AppColors.textMuted),
                     ),
                   ],
@@ -445,7 +445,7 @@ class StatsScreenState extends State<StatsScreen> {
                         ),
                         if (item.isUnlocked) ...[
                           const SizedBox(width: 6),
-                          const Icon(Icons.check_circle_rounded,
+                          Icon(Icons.check_circle_rounded,
                               size: 13, color: AppColors.purple),
                         ],
                       ],
@@ -453,7 +453,7 @@ class StatsScreenState extends State<StatsScreen> {
                     const SizedBox(height: 2),
                     Text(
                       item.description,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         color: AppColors.textSecondary,
                       ),
@@ -476,7 +476,7 @@ class StatsScreenState extends State<StatsScreen> {
               const SizedBox(width: 8),
               Text(
                 '+${item.xpReward} XP',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: AppColors.amber,
@@ -491,7 +491,7 @@ class StatsScreenState extends State<StatsScreen> {
 
   Widget _buildLeaderboardView() {
     if (_highScores.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           'No arcade high scores yet.\nComplete sessions to rank on the local leaderboard!',
           textAlign: TextAlign.center,
@@ -545,7 +545,7 @@ class StatsScreenState extends State<StatsScreen> {
                   children: [
                     Text(
                       '${record.gameMode.label} · ${record.scriptMode.label}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
                         color: AppColors.text,
@@ -554,7 +554,7 @@ class StatsScreenState extends State<StatsScreen> {
                     const SizedBox(height: 2),
                     Text(
                       '${record.cardsCleared} cards · ${record.accuracy}% acc · ${record.durationSeconds}s · $dateStr',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 10,
                         color: AppColors.textMuted,
                       ),
@@ -564,7 +564,7 @@ class StatsScreenState extends State<StatsScreen> {
               ),
               Text(
                 '${record.score} pts',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
                   color: AppColors.amber,

@@ -80,7 +80,7 @@ class ChartScreenState extends State<ChartScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -146,25 +146,25 @@ class ChartScreenState extends State<ChartScreen> {
                 _searchQuery = val;
               });
             },
-            style: const TextStyle(fontSize: 13, color: AppColors.text),
+            style: TextStyle(fontSize: 13, color: AppColors.text),
             decoration: InputDecoration(
               hintText: 'Search by romaji (e.g. "ka", "shi") or kana...',
-              hintStyle: const TextStyle(fontSize: 12, color: AppColors.textMuted),
-              prefixIcon: const Icon(Icons.search, size: 18, color: AppColors.textSecondary),
+              hintStyle: TextStyle(fontSize: 12, color: AppColors.textMuted),
+              prefixIcon: Icon(Icons.search, size: 18, color: AppColors.textSecondary),
               filled: true,
               fillColor: AppColors.surface,
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.border),
+                borderSide: BorderSide(color: AppColors.border),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.border),
+                borderSide: BorderSide(color: AppColors.border),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.amber),
+                borderSide: BorderSide(color: AppColors.amber),
               ),
             ),
           ),
@@ -310,7 +310,7 @@ class ChartScreenState extends State<ChartScreen> {
                             children: [
                               Text(
                                 item.getCharacter(_script),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.text,
@@ -319,7 +319,7 @@ class ChartScreenState extends State<ChartScreen> {
                               const SizedBox(height: 2),
                               Text(
                                 item.romaji,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.textSecondary,
@@ -351,7 +351,7 @@ class ChartScreenState extends State<ChartScreen> {
         const SizedBox(width: 4),
         Text(
           label,
-          style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+          style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
         ),
       ],
     );

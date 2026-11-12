@@ -56,7 +56,7 @@ class PlayingStage extends StatelessWidget {
           children: [
             // Exit Button
             IconButton(
-              icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
+              icon: Icon(Icons.close_rounded, color: AppColors.textSecondary),
               tooltip: 'End Run',
               onPressed: onEndRun,
             ),
@@ -121,7 +121,7 @@ class PlayingStage extends StatelessWidget {
                     ),
                     child: Text(
                       '${streak}x ($comboMultiplier倍)',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         color: AppColors.amber,
@@ -132,7 +132,7 @@ class PlayingStage extends StatelessWidget {
                 ],
                 Text(
                   '$score pts',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                     color: AppColors.text,
@@ -193,7 +193,7 @@ class PlayingStage extends StatelessWidget {
                           currentCard.script == KanaScript.hiragana
                               ? 'HIRAGANA'
                               : 'KATAKANA',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.1,
@@ -212,7 +212,7 @@ class PlayingStage extends StatelessWidget {
                             border: Border.all(
                                 color: AppColors.amber.withValues(alpha: 0.4)),
                           ),
-                          child: const Text(
+                          child: Text(
                             '⚡ REDEMPTION',
                             style: TextStyle(
                               fontSize: 10,
@@ -231,7 +231,7 @@ class PlayingStage extends StatelessWidget {
                   // Giant Kana Character
                   Text(
                     currentCard.displayCharacter,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 88,
                       fontWeight: FontWeight.bold,
                       color: AppColors.text,
@@ -252,7 +252,7 @@ class PlayingStage extends StatelessWidget {
                       ),
                       child: Text(
                         currentCard.item.hint,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           color: AppColors.amber,
                           fontWeight: FontWeight.w500,
@@ -263,9 +263,9 @@ class PlayingStage extends StatelessWidget {
                   else
                     TextButton.icon(
                       onPressed: onToggleHint,
-                      icon: const Icon(Icons.lightbulb_outline_rounded,
+                      icon: Icon(Icons.lightbulb_outline_rounded,
                           size: 14, color: AppColors.textMuted),
-                      label: const Text(
+                      label: Text(
                         'Show Hint (-25 pts)',
                         style: TextStyle(
                           fontSize: 11,
@@ -281,12 +281,12 @@ class PlayingStage extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.check_circle_rounded,
+                          Icon(Icons.check_circle_rounded,
                               size: 16, color: AppColors.emerald),
                           const SizedBox(width: 6),
                           Text(
                             '+${feedback!.pointsEarned} pts',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                               color: AppColors.emerald,
@@ -296,7 +296,7 @@ class PlayingStage extends StatelessWidget {
                             const SizedBox(width: 6),
                             Text(
                               feedback!.speedTier!.label,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11,
                                 color: AppColors.textSecondary,
                               ),
@@ -308,12 +308,12 @@ class PlayingStage extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.cancel_rounded,
+                          Icon(Icons.cancel_rounded,
                               size: 16, color: AppColors.rose),
                           const SizedBox(width: 6),
                           Text(
                             'Answer: ${feedback!.expectedRomaji}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                               color: AppColors.rose,
@@ -447,7 +447,7 @@ class _TypingModeInput extends StatelessWidget {
             focusNode: focusNode,
             autofocus: true,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
               letterSpacing: 2,
@@ -455,7 +455,7 @@ class _TypingModeInput extends StatelessWidget {
             ),
             decoration: InputDecoration(
               hintText: 'Type romaji...',
-              hintStyle: const TextStyle(
+              hintStyle: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.normal,
                 color: AppColors.textMuted,
@@ -466,15 +466,15 @@ class _TypingModeInput extends StatelessWidget {
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: AppColors.border),
+                borderSide: BorderSide(color: AppColors.border),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: AppColors.border),
+                borderSide: BorderSide(color: AppColors.border),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: AppColors.emerald, width: 2),
+                borderSide: BorderSide(color: AppColors.emerald, width: 2),
               ),
             ),
             onSubmitted: (val) {
@@ -505,7 +505,7 @@ class _TypingModeInput extends StatelessWidget {
                         alignment: Alignment.center,
                         child: Text(
                           ch,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                             color: AppColors.text,
@@ -526,7 +526,7 @@ class _TypingModeInput extends StatelessWidget {
                     border: Border.all(color: AppColors.border),
                   ),
                   alignment: Alignment.center,
-                  child: const Icon(Icons.backspace_outlined,
+                  child: Icon(Icons.backspace_outlined,
                       size: 14, color: AppColors.textSecondary),
                 ),
               ),

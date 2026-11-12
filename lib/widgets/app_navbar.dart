@@ -10,6 +10,8 @@ class AppNavbar extends StatelessWidget implements PreferredSizeWidget {
   final bool voiceEnabled;
   final VoidCallback onToggleSound;
   final VoidCallback onToggleVoice;
+  final VoidCallback? onOpenSettings;
+  final bool isSettingsActive;
 
   const AppNavbar({
     super.key,
@@ -20,6 +22,8 @@ class AppNavbar extends StatelessWidget implements PreferredSizeWidget {
     required this.voiceEnabled,
     required this.onToggleSound,
     required this.onToggleVoice,
+    this.onOpenSettings,
+    this.isSettingsActive = false,
   });
 
   @override
@@ -28,7 +32,7 @@ class AppNavbar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.background,
         border: Border(
           bottom: BorderSide(color: AppColors.border, width: 1),
@@ -55,7 +59,7 @@ class AppNavbar extends StatelessWidget implements PreferredSizeWidget {
                   border: Border.all(color: AppColors.borderLight),
                 ),
                 alignment: Alignment.center,
-                child: const Text(
+                child: Text(
                   'あ',
                   style: TextStyle(
                     fontSize: 18,
@@ -71,7 +75,7 @@ class AppNavbar extends StatelessWidget implements PreferredSizeWidget {
                 children: [
                   Row(
                     children: [
-                      const Text(
+                      Text(
                         'Bun Bun Go',
                         style: TextStyle(
                           fontSize: 14,
@@ -89,7 +93,7 @@ class AppNavbar extends StatelessWidget implements PreferredSizeWidget {
                         ),
                         child: Text(
                           'Lv.$level',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                             color: AppColors.textSecondary,
@@ -100,7 +104,7 @@ class AppNavbar extends StatelessWidget implements PreferredSizeWidget {
                   ),
                   Text(
                     '${getRankTitleForLevel(level)} · $unlockedAchievements/$totalAchievements Badges',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
                       color: AppColors.textMuted,
                     ),
@@ -110,7 +114,7 @@ class AppNavbar extends StatelessWidget implements PreferredSizeWidget {
             ],
           ),
 
-          // Audio Controls
+          // Audio & Settings Controls
           Row(
             children: [
               _AudioToggleButton(
@@ -124,6 +128,13 @@ class AppNavbar extends StatelessWidget implements PreferredSizeWidget {
                 enabled: voiceEnabled,
                 onTap: onToggleVoice,
               ),
+              if (onOpenSettings != null) ...[
+                const SizedBox(width: 6),
+                _SettingsNavButton(
+                  isActive: isSettingsActive,
+                  onTap: onOpenSettings!,
+                ),
+              ],
             ],
           ),
         ],
@@ -178,6 +189,43 @@ class _AudioToggleButton extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsNavButton extends StatelessWidget {
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _SettingsNavButton({
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        height: 28,
+        width: 32,
+        decoration: BoxDecoration(
+          color: isActive
+              ? AppColors.rose.withValues(alpha: 0.15)
+              : AppColors.surfaceElevated,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isActive ? AppColors.rose : AppColors.borderLight,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Icon(
+          Icons.tune_rounded,
+          size: 15,
+          color: isActive ? AppColors.rose : AppColors.textSecondary,
         ),
       ),
     );

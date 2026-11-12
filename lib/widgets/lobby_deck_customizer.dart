@@ -32,7 +32,7 @@ class LobbyDeckCustomizer extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Section 1: Script Mode
-        const Text(
+        Text(
           'SCRIPT SELECTION',
           style: TextStyle(
             fontSize: 11,
@@ -79,7 +79,7 @@ class LobbyDeckCustomizer extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'GAME MODE',
                     style: TextStyle(
                       fontSize: 11,
@@ -124,7 +124,7 @@ class LobbyDeckCustomizer extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'INPUT METHOD',
                     style: TextStyle(
                       fontSize: 11,
@@ -166,7 +166,7 @@ class LobbyDeckCustomizer extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'PRACTICE ROWS',
               style: TextStyle(
                 fontSize: 11,
@@ -177,7 +177,7 @@ class LobbyDeckCustomizer extends StatelessWidget {
             ),
             Row(
               children: [
-                const Text(
+                Text(
                   'Unlock All',
                   style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                 ),
@@ -298,7 +298,7 @@ class LobbyDeckCustomizer extends StatelessWidget {
                               ),
                               if (!isUnlocked) ...[
                                 const SizedBox(width: 6),
-                                const Icon(Icons.lock_outline,
+                                Icon(Icons.lock_outline,
                                     size: 13, color: AppColors.textMuted),
                               ],
                             ],
@@ -306,7 +306,7 @@ class LobbyDeckCustomizer extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                             group.romajiSummary,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
                               color: AppColors.textSecondary,
                             ),
@@ -332,7 +332,7 @@ class LobbyDeckCustomizer extends StatelessWidget {
                             : null,
                       )
                     else
-                      const Text(
+                      Text(
                         'Locked',
                         style: TextStyle(
                           fontSize: 11,
@@ -410,7 +410,7 @@ class _PresetButton extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
             color: AppColors.textSecondary,
