@@ -1,13 +1,19 @@
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/achievements_data.dart';
 import '../logic/progression_engine.dart';
+import '../models/user_data_backup.dart';
 import '../models/user_progression.dart';
 import '../providers/app_providers.dart';
+import '../services/backup_service.dart';
+import '../services/device_info_helper.dart';
 import '../services/persistence_service.dart';
 import '../services/sample_data_seeder.dart';
 import '../theme/app_theme.dart';
@@ -32,11 +38,29 @@ class _AboutScreenState extends State<AboutScreen> {
   bool _isLoading = true;
   bool _developerMode = false;
   PersistenceService? _persistence;
+  UserDataBackupService? _backupService;
   UserProgression _progression = const UserProgression();
+
+  Map<String, dynamic>? _currentDeviceInfo;
+  String? _lastExportDate;
+  Map<String, dynamic>? _lastExportDevice;
+  String? _lastImportDate;
+  Map<String, dynamic>? _lastImportDevice;
+  bool _isExporting = false;
+  bool _isImporting = false;
 
   @override
   void initState() {
     super.initState();
+    if (widget.persistence != null) {
+      _persistence = widget.persistence;
+      _backupService = UserDataBackupService(widget.persistence!);
+      _progression = widget.persistence!.loadUserProgression();
+      _lastExportDate = widget.persistence!.getLastExportDate();
+      _lastExportDevice = widget.persistence!.getLastExportDevice();
+      _lastImportDate = widget.persistence!.getLastImportDate();
+      _lastImportDevice = widget.persistence!.getLastImportDevice();
+    }
     _loadPackageInfo();
     _loadDeveloperMode();
     _initPersistence();
@@ -44,10 +68,22 @@ class _AboutScreenState extends State<AboutScreen> {
 
   Future<void> _initPersistence() async {
     final p = widget.persistence ?? await PersistenceService.getInstance();
+    final backupService = UserDataBackupService(p);
+    Map<String, dynamic>? devInfo;
+    try {
+      devInfo = await DeviceInfoHelper.getDeviceInfo();
+    } catch (_) {}
+
     if (mounted) {
       setState(() {
         _persistence = p;
+        _backupService = backupService;
         _progression = p.loadUserProgression();
+        _currentDeviceInfo = devInfo;
+        _lastExportDate = p.getLastExportDate();
+        _lastExportDevice = p.getLastExportDevice();
+        _lastImportDate = p.getLastImportDate();
+        _lastImportDevice = p.getLastImportDevice();
       });
     }
   }
@@ -822,6 +858,11 @@ BunBunGo System Info:
 
                   const SizedBox(height: 16),
 
+                  // Section: Backup & Restore User Data (.bbg disguise)
+                  _buildBackupRestoreSection(),
+
+                  const SizedBox(height: 16),
+
                   // Section: Telemetry & Mock Data
                   Text(
                     'DATA & TELEMETRY GENERATOR',
@@ -948,6 +989,738 @@ BunBunGo System Info:
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBackupRestoreSection() {
+    final lastExportStr = _formatIsoDate(_lastExportDate);
+    final lastExportDevStr = _lastExportDevice != null
+        ? DeviceInfoHelper.formatDeviceSummary(_lastExportDevice)
+        : null;
+    final lastImportStr = _formatIsoDate(_lastImportDate);
+    final lastImportDevStr = _lastImportDevice != null
+        ? DeviceInfoHelper.formatDeviceSummary(_lastImportDevice)
+        : null;
+    final currentDevStr = DeviceInfoHelper.formatDeviceSummary(_currentDeviceInfo);
+    final appVerStr = 'v${_packageInfo?.version ?? '1.1.0'}+${_packageInfo?.buildNumber ?? '2'}';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Text(
+              'BACKUP & RESTORE USER DATA',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.1,
+                color: AppColors.emerald,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.emerald.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: AppColors.emerald.withValues(alpha: 0.4)),
+              ),
+              child: Text(
+                '.bbg DISGUISED JSON',
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.emerald,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceElevated,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildBackupMetaRow(
+                icon: Icons.layers_outlined,
+                label: 'App Version',
+                value: appVerStr,
+              ),
+              Divider(height: 14, color: AppColors.border),
+              _buildBackupMetaRow(
+                icon: Icons.devices_rounded,
+                label: 'Current Device',
+                value: currentDevStr,
+              ),
+              Divider(height: 14, color: AppColors.border),
+              _buildBackupMetaRow(
+                icon: Icons.upload_file_rounded,
+                label: 'Last Exported',
+                value: lastExportStr,
+                subtitle: lastExportDevStr,
+              ),
+              Divider(height: 14, color: AppColors.border),
+              _buildBackupMetaRow(
+                icon: Icons.download_rounded,
+                label: 'Last Imported',
+                value: lastImportStr,
+                subtitle: lastImportDevStr,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                key: const Key('dev_export_user_data_button'),
+                onPressed: _isExporting || _isImporting ? null : _handleExportUserData,
+                icon: _isExporting
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.file_upload_outlined, size: 16),
+                label: Text(
+                  _isExporting ? 'Exporting...' : 'Export .bbg',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.emerald,
+                  foregroundColor: AppColors.emerald.computeLuminance() > 0.5 ? Colors.black : Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                key: const Key('dev_import_user_data_button'),
+                onPressed: _isExporting || _isImporting ? null : _handleImportUserData,
+                icon: _isImporting
+                    ? SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.sky),
+                      )
+                    : const Icon(Icons.file_download_outlined, size: 16),
+                label: Text(
+                  _isImporting ? 'Importing...' : 'Import .bbg',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.sky,
+                  side: BorderSide(color: AppColors.sky.withValues(alpha: 0.6)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBackupMetaRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    String? subtitle,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Icon(icon, size: 16, color: AppColors.textSecondary),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+        ),
+        const Spacer(),
+        Expanded(
+          flex: 2,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                value,
+                textAlign: TextAlign.end,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.text,
+                ),
+              ),
+              if (subtitle != null && subtitle.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  textAlign: TextAlign.end,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 10, color: AppColors.textMuted),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatIsoDate(String? iso) {
+    if (iso == null || iso.isEmpty) return 'Never';
+    try {
+      final dt = DateTime.parse(iso).toLocal();
+      final y = dt.year.toString().padLeft(4, '0');
+      final m = dt.month.toString().padLeft(2, '0');
+      final d = dt.day.toString().padLeft(2, '0');
+      final hh = dt.hour.toString().padLeft(2, '0');
+      final mm = dt.minute.toString().padLeft(2, '0');
+      return '$y-$m-$d $hh:$mm';
+    } catch (_) {
+      return iso;
+    }
+  }
+
+  Future<void> _handleExportUserData() async {
+    final persistence = _persistence;
+    if (persistence == null) return;
+    final backupService = _backupService ?? UserDataBackupService(persistence);
+
+    setState(() => _isExporting = true);
+    try {
+      final appVer = '${_packageInfo?.version ?? '1.1.0'}+${_packageInfo?.buildNumber ?? '2'}';
+      final bbgFile = await backupService.exportUserData(
+        appVersionOverride: appVer,
+        deviceInfoOverride: _currentDeviceInfo,
+      );
+
+      if (mounted) {
+        setState(() {
+          _lastExportDate = persistence.getLastExportDate();
+          _lastExportDevice = persistence.getLastExportDevice();
+        });
+      }
+
+      HapticFeedback.mediumImpact();
+      if (mounted) {
+        _showExportSuccessDialog(bbgFile);
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSafeSnackBar('Export failed: $e', icon: Icons.error_outline, backgroundColor: AppColors.rose);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isExporting = false);
+      }
+    }
+  }
+
+  void _showExportSuccessDialog(File bbgFile) {
+    final prog = _progression;
+    final fileName = bbgFile.path.split(Platform.pathSeparator).last;
+    int fileSizeKb = 0;
+    try {
+      fileSizeKb = (bbgFile.lengthSync() / 1024).ceil();
+    } catch (_) {}
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Row(
+          children: [
+            Icon(Icons.check_circle_rounded, color: AppColors.emerald, size: 24),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'User Data Exported',
+                style: TextStyle(color: AppColors.text, fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Data packed into JSON and disguised as a .bbg file for safe keeping & portability.',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      fileName,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.emerald,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Size: ~$fileSizeKb KB · Format: Disguised JSON (.bbg)',
+                      style: TextStyle(fontSize: 10, color: AppColors.textMuted),
+                    ),
+                    Divider(height: 12, color: AppColors.border),
+                    Text(
+                      'Full Path: ${bbgFile.path}',
+                      style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Contents: Level ${prog.level} (${prog.xp} XP), Streak: ${prog.currentDailyStreak}d, Badges: ${prog.unlockedAchievements.length}, Rows: ${prog.unlockedRowIds.length}',
+                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          OutlinedButton.icon(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: bbgFile.path));
+              _showSafeSnackBar('File path copied to clipboard!', icon: Icons.copy_rounded);
+            },
+            icon: const Icon(Icons.copy_rounded, size: 14),
+            label: const Text('Copy Path', style: TextStyle(fontSize: 11)),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.textSecondary,
+              side: BorderSide(color: AppColors.border),
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              try {
+                await SharePlus.instance.share(
+                  ShareParams(
+                    files: [XFile(bbgFile.path)],
+                    subject: 'BunBunGo User Data Backup ($fileName)',
+                  ),
+                );
+              } catch (_) {}
+            },
+            icon: const Icon(Icons.ios_share_rounded, size: 14),
+            label: const Text('Share File', style: TextStyle(fontSize: 11)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.emerald,
+              foregroundColor: AppColors.emerald.computeLuminance() > 0.5 ? Colors.black : Colors.white,
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Close', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleImportUserData() async {
+    final persistence = _persistence;
+    if (persistence == null) return;
+    final backupService = _backupService ?? UserDataBackupService(persistence);
+
+    final localBackups = await backupService.listLocalBackups();
+
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => _buildImportSelectionSheet(ctx, backupService, localBackups),
+    );
+  }
+
+  Widget _buildImportSelectionSheet(
+    BuildContext sheetContext,
+    UserDataBackupService backupService,
+    List<File> localBackups,
+  ) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.file_download_rounded, color: AppColors.sky, size: 22),
+                const SizedBox(width: 8),
+                Text(
+                  'Import User Data (.bbg)',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.text,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, size: 20),
+                  onPressed: () => Navigator.pop(sheetContext),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Select a .bbg file to restore all progress, streaks, achievements, and kana mastery.',
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 16),
+
+            // Browse File Button
+            ElevatedButton.icon(
+              key: const Key('browse_bbg_storage_button'),
+              onPressed: () async {
+                Navigator.pop(sheetContext);
+                await _pickAndInspectBbgFile(backupService);
+              },
+              icon: const Icon(Icons.folder_open_rounded, size: 18),
+              label: const Text('Browse Device Storage for .bbg'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.sky,
+                foregroundColor: AppColors.sky.computeLuminance() > 0.5 ? Colors.black : Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+
+            if (localBackups.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text(
+                'RECENT ON-DEVICE BACKUPS',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.1,
+                  color: AppColors.textMuted,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 200),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: localBackups.length.clamp(0, 5),
+                  separatorBuilder: (_, _) => const SizedBox(height: 6),
+                  itemBuilder: (_, index) {
+                    final file = localBackups[index];
+                    final name = file.path.split(Platform.pathSeparator).last;
+                    String modDate = '';
+                    try {
+                      modDate = _formatIsoDate(file.lastModifiedSync().toIso8601String());
+                    } catch (_) {}
+
+                    return InkWell(
+                      onTap: () {
+                        Navigator.pop(sheetContext);
+                        _previewAndConfirmImport(file, backupService);
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceElevated,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.insert_drive_file_outlined, color: AppColors.sky, size: 18),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.text,
+                                    ),
+                                  ),
+                                  if (modDate.isNotEmpty)
+                                    Text(
+                                      modDate,
+                                      style: TextStyle(fontSize: 10, color: AppColors.textMuted),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 18),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickAndInspectBbgFile(UserDataBackupService backupService) async {
+    PlatformFile? picked;
+    try {
+      picked = await FilePicker.pickFile(
+        type: FileType.custom,
+        allowedExtensions: ['bbg'],
+      );
+    } catch (_) {
+      try {
+        picked = await FilePicker.pickFile(type: FileType.any);
+      } catch (e) {
+        _showSafeSnackBar('Unable to open file picker: $e', icon: Icons.error_outline, backgroundColor: AppColors.rose);
+        return;
+      }
+    }
+
+    if (picked == null) return;
+
+    final selectedPath = picked.path;
+    if (selectedPath == null || selectedPath.isEmpty) {
+      _showSafeSnackBar('No file selected.', backgroundColor: AppColors.textSecondary);
+      return;
+    }
+
+    if (!selectedPath.toLowerCase().endsWith('.bbg')) {
+      _showSafeSnackBar(
+        'Selected file is not a .bbg backup. Please select a .bbg file.',
+        icon: Icons.warning_amber_rounded,
+        backgroundColor: AppColors.rose,
+      );
+      return;
+    }
+
+    final file = File(selectedPath);
+    if (!mounted) return;
+    _previewAndConfirmImport(file, backupService);
+  }
+
+  Future<void> _previewAndConfirmImport(
+    File bbgFile,
+    UserDataBackupService backupService,
+  ) async {
+    setState(() => _isImporting = true);
+    final UserDataBackup backup;
+    try {
+      backup = await backupService.inspectBackupFile(bbgFile);
+    } catch (e) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: AppColors.surface,
+            title: Text('Invalid .bbg File', style: TextStyle(color: AppColors.rose)),
+            content: Text(
+              'Could not read user data from ${bbgFile.path.split(Platform.pathSeparator).last}.\n\nError: $e',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('OK', style: TextStyle(color: AppColors.textSecondary)),
+              ),
+            ],
+          ),
+        );
+      }
+      return;
+    } finally {
+      if (mounted) {
+        setState(() => _isImporting = false);
+      }
+    }
+
+    if (!mounted) return;
+
+    final fileName = bbgFile.path.split(Platform.pathSeparator).last;
+    final devSummary = DeviceInfoHelper.formatDeviceSummary(backup.deviceInfo);
+    final prog = backup.progression;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Row(
+          children: [
+            Icon(Icons.restore_page_rounded, color: AppColors.sky, size: 24),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Restore User Data?',
+                style: TextStyle(color: AppColors.text, fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'File: $fileName',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.sky,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Exported: ${_formatIsoDate(backup.exportedAt)} · App: ${backup.appVersion}',
+                style: TextStyle(fontSize: 10, color: AppColors.textMuted),
+              ),
+              Text(
+                'Origin Device: $devSummary',
+                style: TextStyle(fontSize: 10, color: AppColors.textMuted),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'BACKUP DATA CONTENTS',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.8,
+                        color: AppColors.emerald,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text('• Level ${prog.level} · ${prog.xp} Total XP', style: TextStyle(fontSize: 11, color: AppColors.text)),
+                    Text('• Streaks: ${prog.currentDailyStreak} days (Best: ${prog.bestDailyStreak})', style: TextStyle(fontSize: 11, color: AppColors.text)),
+                    Text('• Unlocked Rows: ${prog.unlockedRowIds.length} rows (All unlocked: ${prog.unlockAllRows})', style: TextStyle(fontSize: 11, color: AppColors.text)),
+                    Text('• Achievements: ${prog.unlockedAchievements.length} badges', style: TextStyle(fontSize: 11, color: AppColors.text)),
+                    Text('• Kana Mastery: ${backup.mastery.length} characters tracked', style: TextStyle(fontSize: 11, color: AppColors.text)),
+                    Text('• High Scores: ${backup.highScores.length} records', style: TextStyle(fontSize: 11, color: AppColors.text)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.amber.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.amber.withValues(alpha: 0.4)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning_amber_rounded, size: 16, color: AppColors.amber),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Restoring will overwrite current progress with this backup.',
+                        style: TextStyle(fontSize: 10, color: AppColors.amber),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              setState(() => _isImporting = true);
+              try {
+                // When starting to process the file, backupService renames to .json, consumes it, and applies to database
+                final applied = await backupService.importUserDataFromFile(bbgFile);
+
+                if (mounted) {
+                  setState(() {
+                    _progression = applied.progression;
+                    _lastImportDate = _persistence?.getLastImportDate();
+                    _lastImportDevice = _persistence?.getLastImportDevice();
+                  });
+                }
+
+                _syncRiverpod();
+                widget.onDataChanged?.call();
+                HapticFeedback.heavyImpact();
+
+                if (mounted) {
+                  _showSafeSnackBar(
+                    'User data restored! Level ${applied.progression.level} · ${applied.progression.xp} XP',
+                    icon: Icons.check_circle_rounded,
+                    backgroundColor: AppColors.emerald,
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  _showSafeSnackBar('Restore failed: $e', icon: Icons.error_outline, backgroundColor: AppColors.rose);
+                }
+              } finally {
+                if (mounted) {
+                  setState(() => _isImporting = false);
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.sky,
+              foregroundColor: AppColors.sky.computeLuminance() > 0.5 ? Colors.black : Colors.white,
+            ),
+            child: const Text('Apply & Restore'),
+          ),
         ],
       ),
     );

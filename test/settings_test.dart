@@ -138,6 +138,95 @@ void main() {
       await tester.pump();
       expect(find.text('BunBunGo v2.0.1 is up to date!'), findsOneWidget);
     });
+
+    testWidgets('developer mode toggle reveals backup and restore section with export/import buttons', (WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues({'developer_mode_enabled': true});
+      final persistence = await PersistenceService.getInstance();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.darkTheme,
+          home: AboutScreen(persistence: persistence),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Scroll down to developer section buttons
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('dev_export_user_data_button')),
+        200,
+        scrollable: find.byType(Scrollable),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('BACKUP & RESTORE USER DATA'), findsOneWidget);
+      expect(find.text('.bbg DISGUISED JSON'), findsOneWidget);
+      expect(find.text('App Version'), findsOneWidget);
+      expect(find.text('Current Device'), findsOneWidget);
+      expect(find.text('Last Exported'), findsOneWidget);
+      expect(find.text('Last Imported'), findsOneWidget);
+      expect(find.byKey(const Key('dev_export_user_data_button')), findsOneWidget);
+      expect(find.byKey(const Key('dev_import_user_data_button')), findsOneWidget);
+
+      // Tap Export .bbg button with runAsync to allow filesystem I/O
+      await tester.runAsync(() async {
+        await tester.tap(find.byKey(const Key('dev_export_user_data_button')));
+        await Future<void>.delayed(const Duration(milliseconds: 150));
+      });
+      await tester.pumpAndSettle();
+
+      // Verify success dialog appears with disguised JSON .bbg info
+      expect(find.text('User Data Exported'), findsOneWidget);
+      expect(find.textContaining('disguised as a .bbg file'), findsOneWidget);
+      expect(find.text('Copy Path'), findsOneWidget);
+      expect(find.text('Share File'), findsOneWidget);
+
+      // Close dialog
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+
+      // Verify persistence recorded the export
+      expect(persistence.getLastExportDate(), isNotNull);
+      expect(persistence.getLastExportPath(), isNotNull);
+      expect(persistence.getLastExportPath()!.endsWith('.bbg'), isTrue);
+    });
+
+    testWidgets('tapping Import .bbg opens import selection sheet asking for .bbg file', (WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues({'developer_mode_enabled': true});
+      final persistence = await PersistenceService.getInstance();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.darkTheme,
+          home: AboutScreen(persistence: persistence),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Scroll down to developer section buttons
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('dev_import_user_data_button')),
+        200,
+        scrollable: find.byType(Scrollable),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap Import .bbg button
+      await tester.runAsync(() async {
+        await tester.tap(find.byKey(const Key('dev_import_user_data_button')));
+        await Future<void>.delayed(const Duration(milliseconds: 150));
+      });
+      await tester.pumpAndSettle();
+
+      // Verify import bottom sheet asks for .bbg file
+      expect(find.text('Import User Data (.bbg)'), findsOneWidget);
+      expect(find.text('Browse Device Storage for .bbg'), findsOneWidget);
+      expect(find.textContaining('Select a .bbg file to restore all progress'), findsOneWidget);
+
+      // Close bottom sheet
+      await tester.tap(find.byIcon(Icons.close_rounded));
+      await tester.pumpAndSettle();
+    });
   });
 
   group('SettingsScreen Widget Tests', () {

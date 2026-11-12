@@ -204,6 +204,26 @@ class IsarService {
     return trimmed;
   }
 
+  Future<void> restoreAllHighScores(List<HighScoreRecord> records) async {
+    final updated = List<HighScoreRecord>.from(records)
+      ..sort((a, b) => b.score.compareTo(a.score));
+    final trimmed = updated.take(15).toList();
+    _cachedHighScores = trimmed;
+
+    try {
+      await isar.writeTxn(() async {
+        await isar.highScoreEntitys.clear();
+        if (trimmed.isNotEmpty) {
+          await isar.highScoreEntitys.putAll(
+            trimmed.map((e) => HighScoreEntity.fromModel(e)).toList(),
+          );
+        }
+      });
+    } catch (e) {
+      debugPrint('Isar restoreAllHighScores error: $e');
+    }
+  }
+
   // Clear All
   Future<void> clearAllProgress() async {
     _cachedMastery = {};

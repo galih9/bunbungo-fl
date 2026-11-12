@@ -12,6 +12,11 @@ class PersistenceService {
   static const String _masteryKey = 'bunbungo_offline_mastery_v1';
   static const String _highScoresKey = 'bunbungo_offline_highscores_v1';
   static const String _progressionKey = 'bunbungo_offline_progression_v1';
+  static const String _lastExportDateKey = 'bunbungo_last_export_date_v1';
+  static const String _lastExportDeviceKey = 'bunbungo_last_export_device_v1';
+  static const String _lastImportDateKey = 'bunbungo_last_import_date_v1';
+  static const String _lastImportDeviceKey = 'bunbungo_last_import_device_v1';
+  static const String _lastExportPathKey = 'bunbungo_last_export_path_v1';
 
   final SharedPreferences _prefs;
   final IsarService? _isarService;
@@ -175,6 +180,79 @@ class PersistenceService {
       );
     } catch (_) {}
     return trimmed;
+  }
+
+  Future<void> restoreAllHighScores(List<HighScoreRecord> records) async {
+    if (_isarService != null) {
+      await _isarService.restoreAllHighScores(records);
+    }
+    final updated = List<HighScoreRecord>.from(records)
+      ..sort((a, b) => b.score.compareTo(a.score));
+    final trimmed = updated.take(15).toList();
+    try {
+      await _prefs.setString(
+        _highScoresKey,
+        jsonEncode(trimmed.map((e) => e.toJson()).toList()),
+      );
+    } catch (_) {}
+  }
+
+  String? getLastExportDate() => _prefs.getString(_lastExportDateKey);
+
+  Future<void> setLastExportDate(String dateIso) async {
+    try {
+      await _prefs.setString(_lastExportDateKey, dateIso);
+    } catch (_) {}
+  }
+
+  String? getLastImportDate() => _prefs.getString(_lastImportDateKey);
+
+  Future<void> setLastImportDate(String dateIso) async {
+    try {
+      await _prefs.setString(_lastImportDateKey, dateIso);
+    } catch (_) {}
+  }
+
+  Map<String, dynamic>? getLastExportDevice() {
+    try {
+      final raw = _prefs.getString(_lastExportDeviceKey);
+      if (raw == null || raw.isEmpty) return null;
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) return decoded;
+      if (decoded is Map) return Map<String, dynamic>.from(decoded);
+    } catch (_) {}
+    return null;
+  }
+
+  Future<void> setLastExportDevice(Map<String, dynamic> device) async {
+    try {
+      await _prefs.setString(_lastExportDeviceKey, jsonEncode(device));
+    } catch (_) {}
+  }
+
+  Map<String, dynamic>? getLastImportDevice() {
+    try {
+      final raw = _prefs.getString(_lastImportDeviceKey);
+      if (raw == null || raw.isEmpty) return null;
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) return decoded;
+      if (decoded is Map) return Map<String, dynamic>.from(decoded);
+    } catch (_) {}
+    return null;
+  }
+
+  Future<void> setLastImportDevice(Map<String, dynamic> device) async {
+    try {
+      await _prefs.setString(_lastImportDeviceKey, jsonEncode(device));
+    } catch (_) {}
+  }
+
+  String? getLastExportPath() => _prefs.getString(_lastExportPathKey);
+
+  Future<void> setLastExportPath(String path) async {
+    try {
+      await _prefs.setString(_lastExportPathKey, path);
+    } catch (_) {}
   }
 
   Future<void> clearAllProgress() async {
